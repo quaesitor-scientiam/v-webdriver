@@ -191,17 +191,17 @@ function PageComparison() {
 function PageMobile() {
   return (
     <article style={dpStyles.page}>
-      <div style={dpStyles.breadcrumb}>API reference <span style={{ margin: "0 6px", color: "var(--fg-4)" }}>/</span> <span style={dpStyles.breadcrumb_b}>Mobile (preview)</span></div>
+      <div style={dpStyles.breadcrumb}>API reference <span style={{ margin: "0 6px", color: "var(--fg-4)" }}>/</span> <span style={dpStyles.breadcrumb_b}>Mobile</span></div>
       <h1 id="mobile" style={dpStyles.h1}>
-        Mobile <span className="chip chip--info" style={{ verticalAlign: "middle", marginLeft: 10, fontSize: 11 }}>✨ Preview · not shipped</span>
+        Mobile <span className="chip chip--success" style={{ verticalAlign: "middle", marginLeft: 10, fontSize: 11 }}>✅ Shipped · v5.0.0</span>
       </h1>
       <p style={dpStyles.lede}>
-        A proposed mobile backend that skips Appium entirely. Talk to <strong>WebDriverAgent</strong> on iOS and the <strong>UiAutomator2 server</strong> on Android over their native sockets — the same protocols Appium uses, minus the Node middleware.
+        A native mobile module that skips Appium entirely. Talk to <strong>WebDriverAgent</strong> on iOS and the <strong>UiAutomator2 server</strong> on Android over their native sockets — the same protocols Appium uses, minus the Node middleware.
       </p>
 
-      <Callout kind="warning" title="Status: design sketch">
+      <Callout kind="success" title="Status: shipped in v5.0.0">
         <p style={{ margin: 0 }}>
-          Nothing in this page is implemented yet. It's a concrete proposal for how a real-device mobile API could fit inside Vebidor without compromising the W3C-standards posture. Feedback welcome before code lands.
+          The <code style={dpStyles.inlineCode}>vebidor.mobile</code> module is implemented (Mob-1 → Mob-6.1): sessions, lazy auto-waiting locators, cross-platform <code style={dpStyles.inlineCode}>get_by_*</code> selectors, <code style={dpStyles.inlineCode}>expect()</code> assertions, touch gestures, app lifecycle, and device state. The Android path is verified live on an emulator; iOS on a Simulator. See <strong>COMPARISON_WITH_APPIUM.md</strong> and <strong>MOBILE_TESTING.md</strong>.
         </p>
       </Callout>
 
@@ -222,7 +222,7 @@ function PageMobile() {
           ["Detox (RN only)",     "In-process",     "Hooks RN's bridge / Hermes idle signals",                  "React Native only"],
           ["Maestro",             "Out-of-process", "Direct sockets to idb_companion + UiAutomator2",           "Less granular than full WebDriver"],
           ["Appium",              "Out-of-process", { chip: "Multi-hop", kind: "warning", em: "⚠️" },           "HTTP → Node → vendor → device"],
-          [<strong>Vebidor mobile</strong>, <span className="chip chip--info" style={{ fontSize: 11 }}>✨ Proposed</span>, "Native V client → WDA / UiAutomator2 sockets, no Appium",  "Out-of-process · still can't beat in-process"],
+          [<strong>Vebidor mobile</strong>, <span className="chip chip--success" style={{ fontSize: 11 }}>✅ Shipped</span>, "Native V client → WDA / UiAutomator2 sockets, no Appium",  "Out-of-process · still can't beat in-process"],
         ]}
       />
 
@@ -360,13 +360,14 @@ function PageMobile() {
         </p>
       </Callout>
 
-      <h2 id="mvp" style={dpStyles.h2}>MVP plan</h2>
+      <h2 id="mvp" style={dpStyles.h2}>What shipped</h2>
       <ol style={{ ...dpStyles.ul, paddingLeft: 24 }}>
-        <li style={dpStyles.li}><strong>vebidor/mobile/wda.v</strong> — V client for WebDriverAgent's JSON Wire endpoints (~500 LOC, reuses existing <code style={dpStyles.inlineCode}>HttpTransport</code>).</li>
-        <li style={dpStyles.li}><strong>vebidor/mobile/uia2.v</strong> — V client for UiAutomator2 server (~600 LOC).</li>
-        <li style={dpStyles.li}><strong>vebidor/mobile/locators.v</strong> — predicate / accessibility-id / text locators with the same lazy auto-waiting semantics as web.</li>
-        <li style={dpStyles.li}><strong>vebidor/mobile/bridges.v</strong> — wrap <code style={dpStyles.inlineCode}>idb</code>/<code style={dpStyles.inlineCode}>go-ios</code>/<code style={dpStyles.inlineCode}>adb</code> lifecycle behind a <code style={dpStyles.inlineCode}>launch()</code>-style API.</li>
-        <li style={dpStyles.li}><strong>examples/example_mobile.v</strong> — install, launch, tap, assert, on a real iPhone. Proof of life.</li>
+        <li style={dpStyles.li}><strong>mobile/wda.v</strong> — V client for WebDriverAgent's endpoints (reuses the existing <code style={dpStyles.inlineCode}>HttpTransport</code>).</li>
+        <li style={dpStyles.li}><strong>mobile/uia2.v</strong> — V client for the UiAutomator2 server.</li>
+        <li style={dpStyles.li}><strong>mobile/locator.v</strong> + <strong>selectors.v</strong> — lazy auto-waiting <code style={dpStyles.inlineCode}>MobileLocator</code> and cross-platform <code style={dpStyles.inlineCode}>get_by_*</code> selectors, same semantics as web.</li>
+        <li style={dpStyles.li}><strong>mobile/wda_bridge.v</strong> / <strong>uia2_bridge.v</strong> — wrap <code style={dpStyles.inlineCode}>xcodebuild</code>/<code style={dpStyles.inlineCode}>go-ios</code>/<code style={dpStyles.inlineCode}>adb</code> lifecycle behind a <code style={dpStyles.inlineCode}>launch_ios()</code> / <code style={dpStyles.inlineCode}>launch_android()</code> API.</li>
+        <li style={dpStyles.li}><strong>mobile/assertions.v</strong>, <strong>gestures.v</strong>, <strong>app.v</strong>, <strong>device.v</strong>, <strong>device_state.v</strong> — <code style={dpStyles.inlineCode}>expect()</code>, touch gestures, app lifecycle, and device state.</li>
+        <li style={dpStyles.li}><strong>examples/mobile/</strong> — iOS + Android smoke tests, cross-platform selectors, assertions, app/device state. Verified live on emulator/Simulator.</li>
       </ol>
 
       <h2 id="skip" style={dpStyles.h2}>Out of scope</h2>

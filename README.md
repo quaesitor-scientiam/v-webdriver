@@ -2,7 +2,7 @@
 
 A V language implementation of the W3C WebDriver protocol for browser automation.
 
-**Version 4.2.0** | **Playwright-style API + WebDriver-BiDi + mobile emulation** | **100% Selenium parity** | **Production Ready**
+**Version 5.0.0** | **Playwright-style API + WebDriver-BiDi + native iOS/Android** | **100% Selenium parity** | **Production Ready**
 
 ## ⚡ Modern API (Playwright-style)
 
@@ -601,11 +601,51 @@ Command: get_title
   count: 200  min: 2.007 ms  avg: 2.460 ms  p50: 2.344 ms  p95: 3.045 ms  p99: 4.023 ms  max: 4.545 ms
 ```
 
+## 📱 Native Mobile (iOS + Android)
+
+Beyond browser automation, Vebidor ships a native **mobile** module
+([`vebidor.mobile`](mobile/)) that drives real apps on iOS and Android — by
+talking **directly** to WebDriverAgent (iOS) and the UiAutomator2 server
+(Android), the same on-device backends Appium uses, but with **no Node
+middleware**.
+
+```v
+import vebidor.mobile
+
+mut s := mobile.launch_android(mobile.AndroidOptions{
+    mode: .spawn
+    udid: 'emulator-5554'
+    app_package: 'com.android.settings'
+    app_activity: '.Settings'
+    uia2_server_apk: server_apk
+    uia2_server_test_apk: test_apk
+})!
+defer { s.close() }
+
+// Same Playwright-style surface as the web module:
+mobile.expect(s.get_by_text('Battery')).to_be_visible()!
+s.get_by_label('Battery').tap()!
+s.set_orientation(.landscape)!
+```
+
+One API, two backends. Cross-platform `get_by_label/text/test_id/role`
+selectors, lazy auto-waiting locators, `expect()` assertions, touch
+gestures, app lifecycle, and device state (orientation, lock, geolocation,
+network) — all sharing the web module's transport and polling engine. The
+Android path is verified live on an emulator; iOS on a Simulator.
+
+See **[COMPARISON_WITH_APPIUM.md](COMPARISON_WITH_APPIUM.md)** for the
+Appium feature mapping and **[MOBILE_TESTING.md](MOBILE_TESTING.md)** for
+setup.
+
 ## 📚 Documentation
 
 - **[COMPARISON_WITH_SELENIUM.md](COMPARISON_WITH_SELENIUM.md)** - Feature comparison with Selenium
 - **[COMPARISON_WITH_PLAYWRIGHT.md](COMPARISON_WITH_PLAYWRIGHT.md)** - Comparison with Playwright & roadmap
-- **[TESTING.md](TESTING.md)** - Testing guide
+- **[COMPARISON_WITH_APPIUM.md](COMPARISON_WITH_APPIUM.md)** - Native mobile vs Appium
+- **[TESTING.md](TESTING.md)** - Testing guide (web)
+- **[MOBILE_TESTING.md](MOBILE_TESTING.md)** - Mobile setup guide (iOS Simulator + Android Emulator)
+- **[MOBILE_PLAN.md](MOBILE_PLAN.md)** - Mobile module architecture & phase status
 - **[TEST_ENVIRONMENT_SETUP.md](TEST_ENVIRONMENT_SETUP.md)** - Test environment setup
 - **[CHANGELOG.md](CHANGELOG.md)** - Change history
 

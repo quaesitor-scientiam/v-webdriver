@@ -1,5 +1,75 @@
 # WebDriver V Library - Changelog
 
+## [5.0.0] - 2026-06-01 - Native mobile (iOS + Android)
+
+A new **`vebidor.mobile`** module: native automation of real apps on iOS
+and Android, driving **WebDriverAgent** (iOS) and the **UiAutomator2
+server** (Android) directly over their HTTP sockets — the same backends
+Appium uses, with no Node middleware. Sibling to `vebidor.webdriver`;
+shares its `HttpTransport`, lazy auto-waiting locator, and `poll_until_true`
+assertion engine. Major version bump because it's a new top-level module.
+
+The entire Android path is **verified live on an Android Emulator** (Pixel
+AVD, API 34, arm64; UiAutomator2 server v10.2.1). The iOS path is verified
+live on an iOS Simulator (iPhone 17 Pro, iOS 26.5) for sessions, selectors,
+assertions, and gestures.
+
+### ✨ Added
+
+- **Sessions & bridges** ([`launcher.v`](mobile/launcher.v),
+  [`wda_bridge.v`](mobile/wda_bridge.v), [`uia2_bridge.v`](mobile/uia2_bridge.v)) —
+  `launch_ios()` / `launch_android()` with `.attach` (connect to a running
+  backend), `.simulator` / `.spawn` (auto-boot + auto-launch via
+  `xcodebuild` / `adb am instrument`), and `.device` (go-ios). RAII-style
+  `MobileSession.close()` tears down whatever was spawned.
+- **WDA + UiA2 clients** ([`wda.v`](mobile/wda.v), [`uia2.v`](mobile/uia2.v)) —
+  find/click/send_keys/clear/text/attribute/page_source. `find_payload`
+  emits each backend's native dialect (W3C `using`/`value` for WDA,
+  `strategy`/`selector` for UiA2).
+- **Locators** ([`locator.v`](mobile/locator.v)) — lazy auto-waiting
+  `MobileLocator` (re-resolves on use, staleness-immune); `find` /
+  `find_all` / `wait_for` / `wait_until_actionable`.
+- **Native selectors** ([`wda_locators.v`](mobile/wda_locators.v),
+  [`uia2_locators.v`](mobile/uia2_locators.v)) — accessibility id, predicate,
+  class chain, xpath (iOS); id, class name, UiSelector, text/textContains,
+  xpath (Android).
+- **Cross-platform selectors** ([`selectors.v`](mobile/selectors.v)) —
+  `get_by_test_id` / `get_by_label` / `get_by_text` / `get_by_role` +
+  generic `locator(strategy, value)`. One call compiles to the right
+  per-platform strategy. `MobileRole` enum with iOS⇄Android mapping.
+- **Assertions** ([`assertions.v`](mobile/assertions.v)) — `mobile.expect(loc)`
+  Playwright-style polling: `to_be_visible/hidden/enabled/disabled`,
+  `to_have_text/contain_text/have_attribute/have_count`, `.not()`,
+  `.with_timeout()`.
+- **Gestures** ([`gestures.v`](mobile/gestures.v)) — W3C touch actions:
+  tap/long_press/swipe (4 directions)/drag_to/scroll_into_view, plus
+  screen-relative `tap_at` / `long_press_at` / `swipe`.
+- **App lifecycle** ([`app.v`](mobile/app.v)) — `activate_app` /
+  `terminate_app` / `query_app_state` / `background_app` / `install_app` /
+  `remove_app`. iOS over WDA `/wda/apps/*`; Android over adb.
+- **Device state** ([`device.v`](mobile/device.v),
+  [`device_state.v`](mobile/device_state.v)) — `orientation` /
+  `set_orientation`; `lock` / `unlock` / `is_locked`; `set_geolocation`;
+  `set_network_condition`.
+- **Examples** ([`examples/mobile/`](examples/mobile/)) — iOS smoke
+  (attach + auto-launch), Android smoke, cross-platform selectors,
+  assertions+gestures, app lifecycle, device state.
+- **Docs** — [COMPARISON_WITH_APPIUM.md](COMPARISON_WITH_APPIUM.md),
+  [MOBILE_TESTING.md](MOBILE_TESTING.md), [MOBILE_PLAN.md](MOBILE_PLAN.md).
+
+### Not implemented (deferred)
+
+- Hybrid app / WebView automation (WDA Safari, UiA2 WebView-over-CDP).
+- Secure Android unlock (PIN / pattern / password) — non-secure keyguard only.
+- iOS per-session network throttling (host Network Link Conditioner only).
+- Real-device Android validation (emulator-validated; real device deferred).
+
+### Compatibility
+
+- **No breaking changes to `vebidor.webdriver`.** The web API is unchanged;
+  mobile is purely additive. The major bump reflects the new module, not a
+  web-side break.
+
 ## [4.2.0] - 2026-05-26 - Mobile emulation
 
 Playwright-style mobile-web **emulation** over BiDi (browser emulation, not

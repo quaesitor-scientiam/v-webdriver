@@ -351,15 +351,24 @@ on Android is emulator-only (real devices need a mock-location provider);
 The iOS lock/geolocation paths are wired and use well-established WDA /
 simctl mechanisms but await a live macOS Simulator validation pass.
 
-### **Mob-7 — Docs, release, comparison** (~1 week)
+### **Mob-7 — Docs, release, comparison** ✅ shipped
 
-- Promote `PageMobile` from "Preview · not shipped" to a real page.
-- `MOBILE_TESTING.md` (analog of `TESTING.md`): WDA prerequisites, signing,
-  Simulator vs real device, emulator setup.
-- `COMPARISON_WITH_APPIUM.md` — same wire, no Node, no hybrid-webview support
-  yet.
-- README mobile section; CHANGELOG entry for `v5.0.0` (major: new module).
-- Mobile chip in the docs sidebar (stub exists at `#mobile`).
+- ✅ `COMPARISON_WITH_APPIUM.md` — same on-device backends (WDA / UiA2),
+  no Node hop; feature-by-feature mapping, what's deferred, when to use
+  which.
+- ✅ `MOBILE_TESTING.md` (analog of `TESTING.md`) — iOS Simulator (WDA
+  build + xctestrun, attach vs auto-launch) and Android Emulator
+  (platform-tools, AVD, UiA2 APKs, env vars) setup, plus a troubleshooting
+  table drawn from the real bring-up.
+- ✅ README mobile section + CHANGELOG `v5.0.0` entry + `v.mod` bump to
+  `5.0.0` (major: new module, no web-side breaks).
+- ✅ Docs site: `PageMobile` promoted from "Preview · not shipped" to
+  "Shipped · v5.0.0" (header chip, status callout, comparison-table chip,
+  and the "what shipped" file list updated to real filenames); sidebar
+  entry moved from Roadmap/preview to API reference/new.
+
+Deferred follow-ups: a dedicated `mobile/` tracer (mirror of
+`bidi_trace.v`), hybrid-webview driving, and real-device validation.
 
 ---
 

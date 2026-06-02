@@ -10,7 +10,7 @@ const PAGES = [
   { id: "selectors",   title: "Selector engines",section: "API reference" },
   { id: "assertions",  title: "Assertions",     section: "API reference" },
   { id: "bidi",        title: "WebDriver-BiDi", section: "API reference" },
-  { id: "mobile",      title: "Mobile",         section: "Roadmap",   chip: "preview" },
+  { id: "mobile",      title: "Mobile",         section: "API reference", chip: "new" },
   { id: "comparison",  title: "Comparison",     section: "Reference" },
   { id: "changelog",   title: "Changelog",      section: "Reference" },
 ];
