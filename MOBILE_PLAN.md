@@ -200,23 +200,47 @@ The two UiA2 APKs come from the
 [appium-uiautomator2-server releases](https://github.com/appium/appium-uiautomator2-server/releases).
 Auto-download / vendoring is a follow-up.
 
-### **Mob-4 — Cross-platform selectors** (~1 week)
+### **Mob-4 — Cross-platform selectors** ✅ shipped + verified live on Android Emulator
 
 This is where the *vebidor* feel emerges — same V code drives both platforms.
 
-- `mobile/selectors.v` — `get_by_label`, `get_by_test_id`, `get_by_text`,
-  `get_by_role`, `locator(strategy, value)`.
+- `mobile/selectors.v` — `get_by_test_id`, `get_by_label`, `get_by_text`,
+  `get_by_role`, and the generic `locator(strategy, value)` escape hatch.
+  Each dispatches on `s.platform` and compiles to the right backend
+  strategy, returning the same lazy auto-waiting `MobileLocator` the
+  single-platform factories return.
+- `MobileRole` enum (`button`, `text_field`, `static_text`, `image`,
+  `checkbox`, `toggle`, `link`) with per-platform mapping tables
+  (XCUIElementType ⇄ android.widget class).
 - Internal dispatch on `s.platform`:
+  - `get_by_test_id("submit-btn")` → `accessibility id` strategy on both
+    (XCUITest `name` on iOS, `content-desc` on Android).
   - `get_by_label("Sign in")` →
     - iOS: predicate `label == 'Sign in' OR name == 'Sign in' OR value == 'Sign in'`
-    - Android: prefer `content-desc == 'Sign in'`, fall back to `text == 'Sign in'`
-  - `get_by_test_id("submit-btn")` →
-    - iOS: predicate `name == 'submit-btn'` (accessibility identifier)
-    - Android: `content-desc == 'submit-btn'`
-  - `get_by_role(.button)` →
-    - iOS: class chain `**/XCUIElementTypeButton`
-    - Android: className `android.widget.Button`
-- `examples/mobile/example_mob_cross.v` — same V source against iOS + Android.
+    - Android: xpath `//*[@content-desc='Sign in' or @text='Sign in']`
+      (a true OR that UiSelector can't express).
+  - `get_by_text("Sign")` (substring) →
+    - iOS: predicate `label CONTAINS 'Sign' OR name CONTAINS 'Sign' OR value CONTAINS 'Sign'`
+    - Android: UiSelector `textContains("Sign")`.
+  - `get_by_role(.button, "OK")` →
+    - iOS: class chain ``**/XCUIElementTypeButton[`label == 'OK' OR …`]``
+    - Android: UiSelector `className("android.widget.Button").text("OK")`.
+- `mobile/locator.v` gained `find_all()` — non-erroring multi-match, backs
+  role counting and iteration.
+- `examples/mobile/example_mob_cross.v` — same selector + assertion source
+  drives either platform; only `open_session()` differs (chosen by the
+  `PLATFORM` env var).
+
+**Mob-3 follow-on fix:** surfacing the cross-platform finders revealed that
+the Android find path was sending the W3C `using`/`value` body, which the
+UiAutomator2 server rejects (`FindElementModel: mandatory field 'selector'
+not present`). Appium's Node driver translates W3C → UiA2's
+`strategy`/`selector` shape before forwarding; talking to the server
+directly, `mobile/wda.v`'s new `find_payload` helper now emits each
+backend's native shape (`using`/`value` for WDA, `strategy`/`selector` for
+UiA2). Confirmed against UiA2 server v10.2.1: all three selector strategies
+(`get_by_text`, `get_by_label`, `get_by_role`) resolve correctly live on
+the emulator.
 
 ### **Mob-5 — Assertions + gestures** ✅ shipped + verified live on iOS Simulator (`150cb5c`)
 

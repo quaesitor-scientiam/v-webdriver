@@ -103,20 +103,33 @@ pub fn new_ios_session(base_url string, bundle_id string) !MobileSession {
 // Appium adds the `-ios ` prefix, but we talk to WDA directly here.
 // expression.
 pub fn (s MobileSession) find_element(using string, value string) !webdriver.ElementRef {
-	mut params := map[string]json.Any{}
-	params['using'] = json.Any(using)
-	params['value'] = json.Any(value)
-	resp := s.post[webdriver.ElementRef]('/session/${s.session_id}/element', json.Any(params))!
+	resp := s.post[webdriver.ElementRef]('/session/${s.session_id}/element', s.find_payload(using,
+		value))!
 	return resp.value
 }
 
 // find_elements returns every match instead of the first.
 pub fn (s MobileSession) find_elements(using string, value string) ![]webdriver.ElementRef {
-	mut params := map[string]json.Any{}
-	params['using'] = json.Any(using)
-	params['value'] = json.Any(value)
-	resp := s.post[[]webdriver.ElementRef]('/session/${s.session_id}/elements', json.Any(params))!
+	resp := s.post[[]webdriver.ElementRef]('/session/${s.session_id}/elements', s.find_payload(using,
+		value))!
 	return resp.value
+}
+
+// find_payload builds the element-finding request body in the dialect the
+// backend expects. WDA (iOS) speaks the W3C `using`/`value` shape; the
+// UiAutomator2 server (Android) wants its own `strategy`/`selector` keys.
+// Appium's Node drivers translate between them — talking to the servers
+// directly, we send each its native shape.
+fn (s MobileSession) find_payload(using string, value string) json.Any {
+	mut params := map[string]json.Any{}
+	if s.platform == .android {
+		params['strategy'] = json.Any(using)
+		params['selector'] = json.Any(value)
+	} else {
+		params['using'] = json.Any(using)
+		params['value'] = json.Any(value)
+	}
+	return json.Any(params)
 }
 
 // click_element sends a tap to the resolved element.

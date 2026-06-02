@@ -33,6 +33,13 @@ pub fn (l MobileLocator) find() !webdriver.ElementRef {
 	return l.session.find_element(l.using, l.value)
 }
 
+// find_all returns every element matching the locator (empty slice if
+// none). Unlike `find`, it does not error on zero matches — use it to
+// count or iterate. One resolution attempt, no auto-wait.
+pub fn (l MobileLocator) find_all() ![]webdriver.ElementRef {
+	return l.session.find_elements(l.using, l.value)
+}
+
 // wait_for polls until the element is present (resolves cleanly), then
 // returns it. Mirrors `webdriver.Locator.wait_for`.
 pub fn (l MobileLocator) wait_for() !webdriver.ElementRef {
