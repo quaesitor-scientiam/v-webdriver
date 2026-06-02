@@ -156,7 +156,30 @@ function PageComparison() {
     <article style={dpStyles.page}>
       <div style={dpStyles.breadcrumb}>Reference <span style={{ margin: "0 6px", color: "var(--fg-4)" }}>/</span> <span style={dpStyles.breadcrumb_b}>Comparison</span></div>
       <h1 id="comparison" style={dpStyles.h1}>Comparison <span className="emoji" style={{ fontSize: 26 }}>🎯</span></h1>
-      <p style={dpStyles.lede}>Vebidor sits between Selenium (peer) and Playwright (newer generation). This is where it lands feature-for-feature.</p>
+      <p style={dpStyles.lede}>Vebidor is the only browser <strong>+ native mobile</strong> automation library native to V. Here's how it lands against the three tools it overlaps with — Selenium, Playwright, and Appium.</p>
+
+      <h2 id="four-way" style={dpStyles.h2}>Four-way at a glance</h2>
+      <ComparisonTable
+        columns={[
+          { label: "", width: "30%" },
+          { label: "Vebidor", width: "18%" },
+          { label: "Selenium", width: "17%" },
+          { label: "Playwright", width: "18%" },
+          { label: "Appium" },
+        ]}
+        rows={[
+          ["Domain",                  { chip: "Web + mobile", kind: "milestone", em: "🏆" }, "Web", "Web", "Native mobile"],
+          ["V binding",              { chip: "Native", kind: "success", em: "✅" }, { chip: "None", kind: "neutral", em: "" }, { chip: "None", kind: "neutral", em: "" }, { chip: "None", kind: "neutral", em: "" }],
+          ["Transport",              { chip: "W3C + BiDi", kind: "success", em: "✅" }, "W3C Classic", { chip: "CDP", kind: "neutral", em: "" }, "WDA / UiA2"],
+          ["Standards-based",        { chip: "End-to-end", kind: "milestone", em: "🏆" }, { chip: "Yes", kind: "success", em: "✅" }, { chip: "Chromium", kind: "warning", em: "⚠️" }, { chip: "+Node", kind: "warning", em: "⚠️" }],
+          ["Runtime deps",           { chip: "Native bin", kind: "success", em: "✅" }, "driver+runtime", { chip: "Node+browser", kind: "warning", em: "⚠️" }, { chip: "Node server", kind: "warning", em: "⚠️" }],
+          ["Auto-waiting locators",  { chip: "Yes", kind: "success", em: "✅" }, { chip: "No", kind: "neutral", em: "" }, { chip: "Yes", kind: "success", em: "✅" }, { chip: "Yes", kind: "success", em: "✅" }],
+          ["Native iOS/Android",     { chip: "No Node hop", kind: "success", em: "✅" }, { chip: "No", kind: "neutral", em: "" }, { chip: "No", kind: "neutral", em: "" }, { chip: "Yes", kind: "success", em: "✅" }],
+          ["Hybrid webviews",        { chip: "Not yet", kind: "warning", em: "⚠️" }, "n/a", "n/a", { chip: "Mature", kind: "success", em: "✅" }],
+          ["Trace viewer / video",   { chip: "JSON tracer", kind: "warning", em: "⚠️" }, { chip: "Basic", kind: "neutral", em: "" }, { chip: "Full", kind: "success", em: "✅" }, { chip: "Basic", kind: "neutral", em: "" }],
+        ]}
+      />
+      <p style={dpStyles.p}><strong>How to read it:</strong> matches then <em>exceeds</em> Selenium; same developer experience as Playwright on a standards transport instead of Chromium-only CDP; the same on-device backends as Appium with no Node hop in the path.</p>
 
       <h2 id="vs-playwright" style={dpStyles.h2}>vs Playwright</h2>
       <ComparisonTable
@@ -176,12 +199,32 @@ function PageComparison() {
         ]}
       />
 
+      <h2 id="vs-appium" style={dpStyles.h2}>vs Appium</h2>
+      <p style={dpStyles.p}>The native-mobile module, <code style={dpStyles.inlineCode}>vebidor.mobile</code>, talks to the <strong>same on-device servers</strong> Appium uses — WebDriverAgent (iOS) and the UiAutomator2 server (Android) — directly over their HTTP sockets, with no Node middleware in the path.</p>
+      <ComparisonTable
+        columns={[
+          { label: "Feature", width: "38%" },
+          { label: "Vebidor", width: "16%" },
+          { label: "Appium", width: "14%" },
+          { label: "Notes" },
+        ]}
+        rows={[
+          ["On-device backend",        { chip: "WDA / UiA2", kind: "success", em: "✅" }, { chip: "WDA / UiA2", kind: "success", em: "✅" }, "identical servers"],
+          ["Middleware",              { chip: "None", kind: "milestone", em: "🏆" }, { chip: "Node server", kind: "warning", em: "⚠️" }, "V talks to the sockets directly"],
+          ["Cross-platform selectors", { chip: "get_by_*", kind: "success", em: "✅" }, { chip: "Yes", kind: "success", em: "✅" }, "compile to XCUITest / UiAutomator"],
+          ["App lifecycle + device state", { chip: "Yes", kind: "success", em: "✅" }, { chip: "Yes", kind: "success", em: "✅" }, "launch / terminate, lock, geo, network"],
+          ["Hybrid-app webviews",     { chip: "Not yet", kind: "warning", em: "⚠️" }, { chip: "Yes", kind: "success", em: "✅" }, "WebKit / CDP webview contexts"],
+          ["Plugin / cloud ecosystem", { chip: "Early", kind: "neutral", em: "" }, { chip: "Huge", kind: "success", em: "✅" }, "grids, plugins, language clients"],
+        ]}
+      />
+
       <h2 id="phases" style={dpStyles.h2}>Phase history</h2>
-      <p style={dpStyles.p}>Vebidor's release notes are organized around <strong>Phases</strong> — each one closes a specific gap relative to Selenium or Playwright.</p>
+      <p style={dpStyles.p}>Vebidor's release notes are organized around <strong>Phases</strong> — each one closes a specific gap relative to Selenium, Playwright, or Appium.</p>
       <ul style={dpStyles.ul}>
         <li style={dpStyles.li}><strong>Phase 1–8</strong> — Selenium parity (element properties, alerts, page info, window mgmt, CSS, expected conditions, advanced actions, async/shadow). <span className="chip chip--milestone" style={{ marginLeft: 6 }}><span className="emoji">🏆</span> 100%</span></li>
         <li style={dpStyles.li}><strong>Phase 0–5 (Playwright)</strong> — transport seam, locators, launch(), BiDi transport, BiDi features, tooling. <span className="chip chip--success" style={{ marginLeft: 6 }}><span className="emoji">✅</span> shipped</span></li>
-        <li style={dpStyles.li}><strong>v4.2.0</strong> — mobile-web emulation (device presets, viewport/UA/touch, locale/timezone). <span className="chip chip--info" style={{ marginLeft: 6 }}><span className="emoji">✨</span> new</span></li>
+        <li style={dpStyles.li}><strong>v4.2.0</strong> — mobile-web emulation (device presets, viewport/UA/touch, locale/timezone). <span className="chip chip--success" style={{ marginLeft: 6 }}><span className="emoji">✅</span> shipped</span></li>
+        <li style={dpStyles.li}><strong>v5.0.0 (Mob-1–7)</strong> — native mobile: iOS (WebDriverAgent) + Android (UiAutomator2), cross-platform selectors, gestures, app lifecycle, device state. <span className="chip chip--info" style={{ marginLeft: 6 }}><span className="emoji">✨</span> new</span></li>
       </ul>
     </article>
   );
@@ -739,7 +782,9 @@ const PAGES_DATA = {
   ]},
   "comparison": { component: PageComparison, toc: [
     { id: "comparison", label: "Comparison", depth: 1 },
+    { id: "four-way", label: "Four-way at a glance", depth: 2 },
     { id: "vs-playwright", label: "vs Playwright", depth: 2 },
+    { id: "vs-appium", label: "vs Appium", depth: 2 },
     { id: "phases", label: "Phase history", depth: 2 },
   ]},
   "changelog": { component: PageChangelog, toc: [
