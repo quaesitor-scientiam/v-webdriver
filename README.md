@@ -676,6 +676,29 @@ setup.
 
 See [COMPARISON_WITH_PLAYWRIGHT.md](COMPARISON_WITH_PLAYWRIGHT.md) for the full Playwright/Selenium feature mapping.
 
+## ✨ What's New in v5.0.0
+
+**📱 Native mobile automation** — a new [`vebidor.mobile`](mobile/) module that drives
+real apps on **iOS** (via WebDriverAgent) and **Android** (via the UiAutomator2 server)
+directly over their HTTP sockets — the same backends Appium uses, with no Node middleware.
+Sibling to `vebidor.webdriver`; shares its `HttpTransport`, lazy auto-waiting locator, and
+`poll_until_true` assertion engine.
+
+- ✅ One-call launch — `launch_ios(.simulator)` / `launch_android(.spawn)` boot the
+  Simulator/emulator, spawn the backend, port-forward, poll readiness, and tear it all
+  down on `close()`
+- ✅ Cross-platform selectors — `get_by_role` / `get_by_label` / `get_by_text` /
+  `get_by_test_id` compile to XCUITest predicates (iOS) and UiAutomator selectors (Android)
+- ✅ Auto-waiting actions + W3C-actions gestures — `tap` / `fill` / `swipe_*` /
+  `long_press` / `drag_to` / `scroll_into_view`
+- ✅ Web-first assertions — `mobile.expect(loc).to_be_visible()` with `.not()` / `.with_timeout()`
+- ✅ App lifecycle + device state — `activate_app` / `terminate_app` / `query_app_state`,
+  `lock` / `unlock`, `set_orientation`, `set_geolocation`, `set_network_condition`
+- 📄 See [COMPARISON_WITH_APPIUM.md](COMPARISON_WITH_APPIUM.md) and [MOBILE_TESTING.md](MOBILE_TESTING.md)
+
+Verified live: full Android path on an Android Emulator (Pixel AVD, API 34); iOS sessions,
+selectors, assertions, and gestures on an iOS Simulator.
+
 ## ✨ What's New in v4.2.0
 
 **📱 Playwright-style mobile-web emulation** (over WebDriver-BiDi):
@@ -833,13 +856,13 @@ For issues, questions, or contributions:
 
 ---
 
-**Status**: Production-ready for web automation. Playwright-style API + WebDriver-BiDi on top of 100% Selenium parity. 🎉
+**Status**: Production-ready for web automation (Playwright-style API + WebDriver-BiDi on top of 100% Selenium parity) and native mobile automation (iOS via WebDriverAgent + Android via UiAutomator2). 🎉
 
-**Version**: 4.2.0 (Playwright-style Locators/assertions, `launch()`, WebDriver-BiDi, mobile emulation; 4-browser support)
+**Version**: 5.0.0 (adds `vebidor.mobile` — native iOS/Android app automation; web stack unchanged: Playwright-style Locators/assertions, `launch()`, WebDriver-BiDi, mobile emulation, 4-browser support)
 
 **Selenium-parity phases**: ✅ Phase 1 | ✅ Phase 2 | ✅ Phase 3 | ✅ Phase 4 | ✅ Phase 5 | ✅ Phase 6 | ✅ Phase 7 | ✅ Phase 8
 
 **Playwright-parity roadmap**: ✅ Phase 0 (transport seam) | ✅ Phase 1 (locators/assertions) | ✅ Phase 2 (launch) | ✅ Phase 3 (BiDi transport) | ✅ Phase 4 (BiDi features) | ✅ Phase 5 (tooling) | ✅ BiDi gap closure vs Selenium
 
-**Latest Update**: 2026-05-26 - v4.2.0 Playwright-style mobile-web emulation (device presets, viewport/UA/touch, locale/timezone)
+**Latest Update**: 2026-06-01 - v5.0.0 native mobile automation (`vebidor.mobile`: iOS/WebDriverAgent + Android/UiAutomator2, cross-platform selectors, gestures, app lifecycle, device state)
 
