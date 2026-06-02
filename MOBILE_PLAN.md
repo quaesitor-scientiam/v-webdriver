@@ -155,7 +155,7 @@ the Sim, spawns xcodebuild, polls until WDA answers, drives the
 Settings flow, screenshots, and cleans up the xcodebuild process on
 close().
 
-### **Mob-3 — Android UiAutomator2 client** ✅ shipped (pending live validation on Android Emulator)
+### **Mob-3 — Android UiAutomator2 client** ✅ shipped + verified live on Android Emulator
 
 Symmetric to Mob-2 over `adb`. The HTTP wrappers, element commands,
 locator scaffolding, and gesture/assertion surfaces are all backend-
@@ -184,6 +184,12 @@ needed implementing.
   app on an emulator. Reads `ANDROID_UDID`, `UIA2_SERVER_APK`,
   `UIA2_SERVER_TEST_APK` from env. Demonstrates `find_elements` +
   `mobile.expect()` on Android — same code path that worked on iOS.
+
+Verified end-to-end on macOS against the Android Emulator (Pixel AVD,
+API 34, arm64) with UiAutomator2 server v10.2.1: `adb install -r` of
+both APKs, `am instrument` spawn, `adb forward tcp:6790`, poll until
+the UiA2 server answers, drive the Settings flow, and tear down
+(`adb forward --remove` + `am force-stop`) on `close()`.
 
 Verified on Windows that everything compiles and the example errors
 cleanly at `detect_adb` when adb isn't on PATH. Live validation
