@@ -4,6 +4,8 @@
 
 This document compares the V WebDriver library with Selenium WebDriver to identify implemented features, missing functionality, and areas for improvement.
 
+> For a consolidated four-way view (vebidor vs Selenium, Playwright & Appium), see [COMPARISON.md](COMPARISON.md).
+
 > **Beyond parity:** vebidor now also ships a Playwright-style ergonomic layer
 > (auto-waiting Locators, `get_by_*` selectors, web-first assertions, one-call
 > `launch()`) and a **WebDriver-BiDi** transport (network interception/mocking,

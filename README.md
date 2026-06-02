@@ -640,6 +640,7 @@ setup.
 
 ## 📚 Documentation
 
+- **[COMPARISON.md](COMPARISON.md)** - Four-way at-a-glance: vebidor vs Selenium, Playwright & Appium
 - **[COMPARISON_WITH_SELENIUM.md](COMPARISON_WITH_SELENIUM.md)** - Feature comparison with Selenium
 - **[COMPARISON_WITH_PLAYWRIGHT.md](COMPARISON_WITH_PLAYWRIGHT.md)** - Comparison with Playwright & roadmap
 - **[COMPARISON_WITH_APPIUM.md](COMPARISON_WITH_APPIUM.md)** - Native mobile vs Appium

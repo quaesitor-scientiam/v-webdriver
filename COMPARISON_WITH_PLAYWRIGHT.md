@@ -7,6 +7,8 @@ Selenium comparison ([COMPARISON_WITH_SELENIUM.md](COMPARISON_WITH_SELENIUM.md))
 vebidor against a *peer* (another WebDriver-Classic client), this document measures it
 against a *newer generation* of automation tooling.
 
+> For a consolidated four-way view (vebidor vs Selenium, Playwright & Appium), see [COMPARISON.md](COMPARISON.md).
+
 **Status: the Playwright-parity roadmap (Phases 0–5) is implemented**, plus a follow-up
 pass that brings the WebDriver-BiDi coverage ahead of Selenium's. Every feature below was
 verified live against headless Edge.

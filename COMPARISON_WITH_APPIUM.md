@@ -19,6 +19,8 @@ Appium:           your test → Appium (Node) → WDA / UiA2 → device
 vebidor.mobile:   your test → WDA / UiA2 → device
 ```
 
+> For a consolidated four-way view (vebidor vs Selenium, Playwright & Appium), see [COMPARISON.md](COMPARISON.md).
+
 **Status:** Mob-1 through Mob-6.1 are implemented. The entire Android path
 (UiAutomator2 over adb) is **verified live on an Android Emulator**; the iOS
 path (WDA over a Simulator) is verified live for sessions, selectors,
