@@ -132,6 +132,7 @@ fn launch_ios_simulator(opts IOSOptions) !MobileSession {
 	}
 	s.bridge_procs = procs
 	s.owns_bridge = true
+	s.device_udid = opts.udid
 	return s
 }
 
@@ -156,6 +157,7 @@ fn launch_ios_device(opts IOSOptions) !MobileSession {
 	}
 	s.bridge_procs = procs
 	s.owns_bridge = true
+	s.device_udid = opts.udid
 	return s
 }
 

@@ -38,10 +38,12 @@ pub:
 	// launch options; used by the app-lifecycle helpers in app.v.
 	app_id string
 pub mut:
-	// device_udid is the adb target for Android app/device management
-	// (`adb -s <udid> …`). Populated by launch_android in .spawn mode;
-	// empty for iOS (which manages apps over WDA's HTTP endpoints) and
-	// for Android .attach sessions where no udid was supplied.
+	// device_udid is the device identifier used by host-side tooling:
+	// the adb target on Android (`adb -s <udid> …`) and the Simulator
+	// udid on iOS (`xcrun simctl … <udid>`, e.g. set_geolocation).
+	// Populated by launch_android (.spawn) and launch_ios (.simulator /
+	// .device); empty for sessions opened against an already-running
+	// backend where no udid was supplied.
 	device_udid string
 
 	// Bridge processes the launcher spawned. iOS Simulator adds one

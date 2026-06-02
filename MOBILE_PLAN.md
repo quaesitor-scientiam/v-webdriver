@@ -312,9 +312,44 @@ race can trip UiA2's hard-coded 2s wait when the foreground activity is
 busy — the call is correct, the timeout is environmental, so the example
 treats a rotation timeout as non-fatal.
 
-**Deferred to Mob-6.1:** `lock()` / `unlock()` (UiA2 has no lock endpoint;
-iOS WDA does — asymmetric, needs an adb keyevent path for Android),
-`set_geolocation(lat, lng)`, and `set_network_condition(...)`.
+### **Mob-6.1 — Lock state, geolocation, network** ✅ shipped + verified live on Android Emulator
+
+The device-state tail of Mob-6. Probing UiAutomator2-server v10.2.1
+confirmed it 404s on `/lock`, `/location`, and `/network_connection`, so
+every Android path is adb-driven; iOS uses WDA endpoints / `xcrun simctl`.
+
+- `mobile/device_state.v`:
+  - `lock()` / `unlock()` / `is_locked()` —
+    - iOS: WDA `POST /wda/lock`, `POST /wda/unlock`, `GET /wda/locked`.
+    - Android: `input keyevent 223` (SLEEP) / `keyevent 224` (WAKEUP) +
+      `wm dismiss-keyguard`; `is_locked` reads `dumpsys power`
+      (`mWakefulness` Asleep/Dozing) OR `dumpsys window`
+      (`isKeyguardShowing=true`).
+  - `set_geolocation(lat, lng, alt)` —
+    - iOS: `xcrun simctl location <udid> set <lat>,<lng>` (needs the
+      Simulator udid, now threaded onto iOS sessions too).
+    - Android: `adb emu geo fix <lng> <lat> <alt>` (emulator console;
+      note the lng,lat order).
+  - `set_network_condition(NetworkCondition{...})` — Android-only:
+    airplane mode (`cmd connectivity airplane-mode`), Wi-Fi / data
+    (`svc wifi|data`), and throttling (`adb emu network speed|delay`).
+    iOS errors with a pointer to the host Network Link Conditioner.
+- `MobileSession.device_udid` is now also populated for iOS
+  (launch_ios .simulator / .device) so simctl-based geolocation works.
+- `examples/mobile/example_mob_devicestate.v` — lock round-trip,
+  geolocation fix, and network toggles on the emulator.
+
+**Verified live** on the Android Emulator: `is_locked` false → `lock()` →
+true → `unlock()` → false; `set_geolocation` accepted; airplane mode
+on/off reflected in `settings global airplane_mode_on` (1 → 0); speed/delay
+throttle applied.
+
+**Known limitations (documented, deliberate):** Android `unlock` dismisses
+a *non-secure* keyguard only (no PIN/pattern/password); `set_geolocation`
+on Android is emulator-only (real devices need a mock-location provider);
+`set_network_condition` is Android-only (no per-session iOS throttling).
+The iOS lock/geolocation paths are wired and use well-established WDA /
+simctl mechanisms but await a live macOS Simulator validation pass.
 
 ### **Mob-7 — Docs, release, comparison** (~1 week)
 
