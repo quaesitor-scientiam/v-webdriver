@@ -32,7 +32,18 @@ pub:
 	base_url   string
 	session_id string
 	transport  webdriver.Transport = webdriver.HttpTransport{}
+	// app_id is the application under automation — iOS bundle id
+	// (e.g. `com.apple.Preferences`) or Android package
+	// (e.g. `com.android.settings`). Set at session creation from the
+	// launch options; used by the app-lifecycle helpers in app.v.
+	app_id string
 pub mut:
+	// device_udid is the adb target for Android app/device management
+	// (`adb -s <udid> …`). Populated by launch_android in .spawn mode;
+	// empty for iOS (which manages apps over WDA's HTTP endpoints) and
+	// for Android .attach sessions where no udid was supplied.
+	device_udid string
+
 	// Bridge processes the launcher spawned. iOS Simulator adds one
 	// (`xcodebuild test-without-building`); iOS real device adds two
 	// (`go-ios runwda` + `go-ios forward`); Android adds one

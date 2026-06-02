@@ -93,6 +93,7 @@ pub fn new_ios_session(base_url string, bundle_id string) !MobileSession {
 		platform:   .ios
 		base_url:   base_url
 		session_id: sid_any.str()
+		app_id:     bundle_id
 	}
 }
 

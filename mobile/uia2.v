@@ -48,5 +48,6 @@ pub fn new_android_session(base_url string, app_package string, app_activity str
 		platform:   .android
 		base_url:   base_url
 		session_id: sid_any.str()
+		app_id:     app_package
 	}
 }

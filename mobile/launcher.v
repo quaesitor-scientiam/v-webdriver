@@ -222,6 +222,7 @@ fn launch_android_spawn(opts AndroidOptions) !MobileSession {
 	}
 	s.bridge_procs = procs
 	s.owns_bridge = true
+	s.device_udid = opts.udid
 
 	// On close: release the port forward and force-stop the UiA2 server
 	// on the device. Best-effort — failures here are not fatal because

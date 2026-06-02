@@ -275,12 +275,46 @@ the cross-module call to `webdriver.poll_until_true` all confirmed live.
 Tracer integration (mirror of `bidi_trace.v` for mobile commands)
 deferred to a follow-up.
 
-### **Mob-6 — App management + device state** (~1 week)
+### **Mob-6 — App management + device state** ✅ first cut shipped + verified live on Android Emulator
 
-- `install_app(path)`, `remove_app(bundle_id)`, `launch_app()`,
-  `terminate_app()`, `background_app(seconds)`, `query_app_state() AppState`.
-- `set_orientation(.portrait | .landscape)`, `lock()`, `unlock()`,
-  `set_geolocation(lat, lng)`, `set_network_condition(...)`.
+App lifecycle and device state, split by what each backend natively
+exposes. Empirical probing of the running UiAutomator2 server (v10.2.1)
+showed it implements `/orientation` but returns 404 "unknown command" for
+the app-lifecycle and lock endpoints — Appium's Node driver does those over
+adb, and so do we.
+
+- `mobile/device.v` — `Orientation` enum + `orientation()` /
+  `set_orientation(.portrait | .landscape)`. Both backends implement the
+  W3C `/session/{id}/orientation` endpoint with the same PORTRAIT/LANDSCAPE
+  vocabulary, so this is a single cross-platform surface with no branching.
+- `mobile/app.v` — `AppState` enum (`not_installed` / `not_running` /
+  `background` / `foreground`) + `activate_app(id)`, `terminate_app(id)`,
+  `query_app_state(id)`, `background_app(seconds)`, `install_app(path)`,
+  `remove_app(id)`. Per-platform split:
+  - iOS goes over WDA's HTTP endpoints (`/wda/apps/launch`,
+    `/wda/apps/terminate`, `/wda/apps/state`, `/wda/deactivateApp`).
+  - Android shells out to `adb -s <udid>` (resolve launchable component +
+    `am start`; `am force-stop`; `pm list packages` + `pidof` + `dumpsys
+    activity` for state). `install_app` / `remove_app` are Android-only
+    (`adb install -r` / `uninstall`); on iOS they error with a pointer to
+    `xcrun simctl` / go-ios, since WDA has no install endpoint.
+- `MobileSession` gained `app_id` (bundle id / package, set at session
+  creation) and `device_udid` (adb target, set by `launch_android`).
+- `examples/mobile/example_mob_appstate.v` — drives orientation +
+  full app lifecycle (state → terminate → state → activate → state) on
+  the emulator.
+
+**Verified live** on the Android Emulator: app lifecycle round-trips
+cleanly (`activate` → foreground, `terminate` → not_running, re-`activate`
+→ foreground); orientation get/set round-trips through the library and the
+raw endpoint (PORTRAIT ⇄ LANDSCAPE). Note: the emulator's rotation-settle
+race can trip UiA2's hard-coded 2s wait when the foreground activity is
+busy — the call is correct, the timeout is environmental, so the example
+treats a rotation timeout as non-fatal.
+
+**Deferred to Mob-6.1:** `lock()` / `unlock()` (UiA2 has no lock endpoint;
+iOS WDA does — asymmetric, needs an adb keyevent path for Android),
+`set_geolocation(lat, lng)`, and `set_network_condition(...)`.
 
 ### **Mob-7 — Docs, release, comparison** (~1 week)
 
