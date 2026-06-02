@@ -69,6 +69,47 @@ enormous plugin/cloud ecosystem.
 
 ---
 
+## vs mobile-next / mobilewright — the closest peer
+
+[mobilewright](https://github.com/mobile-next/mobilewright) is the nearest thing
+to `vebidor.mobile`: a **Playwright-style mobile test framework** with semantic
+locators, auto-waiting, and `expect()` assertions. The split between them is the
+*same* standards-vs-integration tradeoff that separates vebidor from Playwright
+on the web.
+
+| | **vebidor.mobile** | **mobilewright** |
+|---|---|---|
+| Language | V (native binary) | TypeScript (Node ≥18) |
+| API style | Playwright-style | Playwright-style |
+| Semantic locators | `get_by_label/role/text/test_id` | `getByLabel/Role/Placeholder/Text/Type/TestId` |
+| Escape-hatch selectors | ✅ xpath / predicate / class-chain / UiSelector | ❌ by design ("No XPath. No coordinates.") |
+| Auto-waiting + `expect()` | ✅ | ✅ |
+| iOS backend | **WebDriverAgent** (standard) | **mobilecli** (mobile-next's own agent) |
+| Android backend | **UiAutomator2 server** (standard) | **mobilecli** (same agent) |
+| Web + mobile in one lib | ✅ shared `get_by_*` / `expect` | ❌ mobile-only (pairs with Playwright Test for web) |
+| Cloud devices | ❌ local only | ✅ via `mobile-use.com` |
+| Maturity | v5.0.0; newer / smaller | v0.0.x beta; more public traction |
+
+**The defining difference:** mobilewright is *vertically integrated* — both
+platforms go through mobile-next's own `mobilecli` agent, which lets it sidestep
+WebDriverAgent code-signing on iOS real devices and ship cloud devices + an
+agent/LLM story. vebidor bets on the *standard public servers* (WDA +
+UiAutomator2) — swappable and widely understood, but it inherits WDA's signing
+friction on iOS hardware.
+
+**mobilewright wins on:** no iOS-signing pain, cloud devices, Playwright-Test
+integration, more community traction today.
+**vebidor.mobile wins on:** native V (no Node), one library spanning web +
+mobile, standard swappable backends, and selector escape hatches when the
+semantic helpers don't fit.
+
+If you write TypeScript and want cloud devices or zero iOS-signing hassle,
+mobilewright is the more mature pick. If you write V, want web + mobile under one
+API, or prefer standards over a vendor agent, `vebidor.mobile` is the only fit —
+and the only V-native option at all.
+
+---
+
 ## Where vebidor is genuinely unique
 
 1. **Only real option in V** — no competitor ships a V binding.
@@ -87,6 +128,8 @@ enormous plugin/cloud ecosystem.
   ecosystem, years of edge-case hardening.
 - **Selenium** — 15 years of community, Selenium Grid, clients in every
   language.
+- **mobilewright** — no iOS code-signing dance, cloud devices, Playwright-Test
+  integration, more community traction.
 
 ---
 

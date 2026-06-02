@@ -218,6 +218,26 @@ function PageComparison() {
         ]}
       />
 
+      <h2 id="vs-mobilenext" style={dpStyles.h2}>vs mobile-next (mobilewright)</h2>
+      <p style={dpStyles.p}><a href="https://github.com/mobile-next/mobilewright">mobilewright</a> is the closest peer — a Playwright-style mobile test framework with semantic locators, auto-waiting, and <code style={dpStyles.inlineCode}>expect()</code>. The split is the same standards-vs-integration tradeoff that separates vebidor from Playwright on the web.</p>
+      <ComparisonTable
+        columns={[
+          { label: "Feature", width: "32%" },
+          { label: "Vebidor", width: "18%" },
+          { label: "mobilewright", width: "18%" },
+          { label: "Notes" },
+        ]}
+        rows={[
+          ["Language",          { chip: "V (native)", kind: "success", em: "✅" }, { chip: "TS / Node", kind: "neutral", em: "" }, "vebidor compiles to a binary"],
+          ["Locators + expect", { chip: "Yes", kind: "success", em: "✅" }, { chip: "Yes", kind: "success", em: "✅" }, "both Playwright-style"],
+          ["On-device backend", { chip: "WDA / UiA2", kind: "milestone", em: "🏆" }, { chip: "mobilecli agent", kind: "warning", em: "⚠️" }, "standard servers vs a single-vendor agent"],
+          ["Web + mobile in one lib", { chip: "Yes", kind: "success", em: "✅" }, { chip: "Mobile only", kind: "neutral", em: "" }, "shared get_by_* / expect"],
+          ["Cloud devices",     { chip: "Local only", kind: "warning", em: "⚠️" }, { chip: "Yes", kind: "success", em: "✅" }, "mobilewright via mobile-use.com"],
+          ["iOS real-device signing", { chip: "WDA signing", kind: "warning", em: "⚠️" }, { chip: "Skipped", kind: "success", em: "✅" }, "their agent avoids the WDA dance"],
+        ]}
+      />
+      <p style={dpStyles.p}><strong>Bottom line:</strong> in TypeScript, or want cloud devices / no iOS-signing hassle → mobilewright. In V, want web + mobile under one API, or prefer standard backends over a vendor agent → <code style={dpStyles.inlineCode}>vebidor.mobile</code> (and it's the only V-native option at all).</p>
+
       <h2 id="phases" style={dpStyles.h2}>Phase history</h2>
       <p style={dpStyles.p}>Vebidor's release notes are organized around <strong>Phases</strong> — each one closes a specific gap relative to Selenium, Playwright, or Appium.</p>
       <ul style={dpStyles.ul}>
@@ -785,6 +805,7 @@ const PAGES_DATA = {
     { id: "four-way", label: "Four-way at a glance", depth: 2 },
     { id: "vs-playwright", label: "vs Playwright", depth: 2 },
     { id: "vs-appium", label: "vs Appium", depth: 2 },
+    { id: "vs-mobilenext", label: "vs mobile-next", depth: 2 },
     { id: "phases", label: "Phase history", depth: 2 },
   ]},
   "changelog": { component: PageChangelog, toc: [
