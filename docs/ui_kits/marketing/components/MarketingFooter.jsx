@@ -11,10 +11,10 @@ function MarketingFooter() {
             <img src="../../assets/logo-vebidor.png" width="32" height="32" alt="vebidor" style={{ borderRadius: 7, display: "block" }} />
             <span style={fStyles.wm}>vebidor</span>
           </div>
-          <p style={fStyles.tagline}>A V language implementation of the W3C WebDriver protocol for browser automation.</p>
+          <p style={fStyles.tagline}>A V language implementation of W3C WebDriver, WebDriver-BiDi, and native iOS/Android automation.</p>
           <div style={fStyles.metaRow}>
             <span style={fStyles.metaChip}>MIT</span>
-            <span style={fStyles.metaChip}>v4.2.0</span>
+            <span style={fStyles.metaChip}>v5.0.0</span>
             <span style={fStyles.metaChip}>0 deps</span>
           </div>
         </div>
@@ -23,7 +23,7 @@ function MarketingFooter() {
             { t: "Quick start",       h: `${DOCS_BASE}#quick-start` },
             { t: "Modern API",        h: `${DOCS_BASE}#modern-api` },
             { t: "WebDriver-BiDi",    h: `${DOCS_BASE}#bidi` },
-            { t: "Mobile (preview)",  h: `${DOCS_BASE}#mobile` },
+            { t: "Mobile",            h: `${DOCS_BASE}#mobile` },
             { t: "Comparison",        h: `${DOCS_BASE}#comparison` },
           ]} />
           <FooterCol label="Reference" links={[

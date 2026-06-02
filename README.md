@@ -165,6 +165,26 @@ Playwright/Selenium feature mapping.
    - **Firefox**: [GeckoDriver](https://github.com/mozilla/geckodriver/releases) (port 4444)
    - **Safari**: Built-in SafariDriver on macOS (port 4445)
 
+### Install the module
+
+The fastest way to get vebidor onto V's module path:
+
+```bash
+v install vebidor
+```
+
+This pulls the module so `import vebidor.webdriver` and `import vebidor.mobile`
+resolve from anywhere. To track `main` instead of a published release, clone and
+symlink the checkout:
+
+```bash
+git clone https://github.com/quaesitor-scientiam/vebidor.git
+cd vebidor
+mkdir -p ~/.vmodules
+ln -s "$(pwd)" ~/.vmodules/vebidor
+# (Alternatively: `v install` from this directory.)
+```
+
 ### Quick Setup
 
 > **Tip:** With the [Modern API](#-modern-api-playwright-style) `launch()`, you
@@ -174,18 +194,6 @@ Playwright/Selenium feature mapping.
 > `new_*_driver(url, caps)` flow that connects to a driver you started yourself.
 
 ```bash
-# Clone the repository
-git clone https://github.com/quaesitor-scientiam/v-webdriver.git
-cd v-webdriver
-
-# Register the checkout on V's module path so `import vebidor.webdriver`
-# resolves. Without this step, `v run examples/*.v` will fail with
-# misleading "unknown type vebidor.webdriver.XYZ" errors because V can't
-# locate the module by name.
-mkdir -p ~/.vmodules
-ln -s "$(pwd)" ~/.vmodules/vebidor
-# (Alternatively: `v install` from this directory.)
-
 # Start your browser's WebDriver
 # Edge/Chrome:
 .\msedgedriver.exe --port=9515  # or chromedriver.exe

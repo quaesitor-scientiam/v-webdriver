@@ -5,8 +5,8 @@ function PhasesTimeline() {
       <div className="mk-container">
         <div style={ptStyles.head}>
           <div style={ptStyles.eyebrow}>Receipts</div>
-          <h2 style={ptStyles.h2}>Eight phases from 55% to 100% parity.</h2>
-          <p style={ptStyles.sub}>Every release closes a specific gap relative to Selenium or Playwright. No marketing math — feature counts come from the changelog.</p>
+          <h2 style={ptStyles.h2}>From 55% parity to web + native mobile.</h2>
+          <p style={ptStyles.sub}>Every release closes a specific gap relative to Selenium, Playwright, or Appium. No marketing math — feature counts come from the changelog.</p>
         </div>
         <div style={ptStyles.timeline}>
           {PHASES.map((p, i) => (
@@ -43,7 +43,8 @@ const PHASES = [
   { phase: "Phase 5–7", version: "2.3.0", title: "Polish + advanced actions",    desc: "CSS values, expected conditions, context-click, drag-and-drop, form submit, element rects.", coverage: 98, chip: "13 methods", chipKind: "neutral" },
   { phase: "Phase 8",   version: "3.0.0", title: "100% feature parity",           desc: "Async JS execution + Shadow DOM. Selenium coverage hits 100%.", coverage: 100, chip: "🏆 Milestone", chipKind: "milestone", final: true },
   { phase: "Playwright Phase 0–5", version: "4.0.0", title: "Modern ergonomics layer", desc: "Transport seam, lazy auto-waiting Locators, web-first assertions, launch(), full WebDriver-BiDi.", coverage: 100, chip: "✨ New layer", chipKind: "info" },
-  { phase: "v4.1 → v4.2", version: "4.2.0", title: "Per-context + mobile emulation", desc: "storageState, per-context proxy/geo/permissions, capability probing, 9 device presets, viewport+UA+touch.", coverage: 100, chip: "✨ Latest", chipKind: "info" },
+  { phase: "v4.1 → v4.2", version: "4.2.0", title: "Per-context + mobile emulation", desc: "storageState, per-context proxy/geo/permissions, capability probing, 9 device presets, viewport+UA+touch.", coverage: 100, chip: "Web", chipKind: "neutral" },
+  { phase: "Mob 1–7", version: "5.0.0", title: "Native iOS + Android", desc: "vebidor.mobile: real-app driving over WebDriverAgent + UiAutomator2, cross-platform get_by_* selectors, gestures, expect() assertions, app + device lifecycle.", coverage: 100, chip: "📲 Latest", chipKind: "info", final: true },
 ];
 
 const ptStyles = {

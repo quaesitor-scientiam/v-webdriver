@@ -8,14 +8,19 @@ function Hero() {
           <div style={heroStyles.eyebrow}>
             <span className="chip chip--milestone"><span className="emoji">🏆</span> 100% Selenium parity</span>
             <span style={heroStyles.eyebrowDot}>·</span>
-            <span style={heroStyles.eyebrowMuted}>v4.2.0 · 2026-05-26</span>
+            <span style={heroStyles.eyebrowMuted}>v5.0.0 · 2026-06-02</span>
           </div>
-          <h1 style={heroStyles.h1}>Playwright-style<br />browser automation,<br /><span style={heroStyles.h1Accent}>natively in V</span>.</h1>
+          <h1 style={heroStyles.h1}>Playwright-style<br />browser <span style={heroStyles.h1Accent}>+ mobile</span><br />automation, <span style={heroStyles.h1Accent}>natively in V</span>.</h1>
           <p style={heroStyles.lede}>
             A W3C WebDriver + WebDriver-BiDi client with lazy auto-waiting Locators, semantic
             selector engines, web-first assertions, network mocking, and one-call <code style={heroStyles.code}>launch()</code> —
-            verified live against headless Edge.
+            and as of v5.0.0, <strong>native iOS &amp; Android</strong> driving over WebDriverAgent and
+            UiAutomator2. Verified live against headless Edge.
           </p>
+          <div style={heroStyles.install}>
+            <span style={heroStyles.installPrompt}>$</span>
+            <code style={heroStyles.installCode}>v install vebidor</code>
+          </div>
           <div style={heroStyles.ctas}>
             <a href="../docs/index.html" style={heroStyles.ctaPrimary}>
               <span className="emoji" style={{ fontSize: 14 }}>🚀</span> Quick start
@@ -97,6 +102,9 @@ const heroStyles = {
   h1Accent: { color: "var(--vb-blue-500)" },
   lede: { fontFamily: "var(--font-sans)", fontSize: 19, lineHeight: 1.55, color: "var(--fg-2)", margin: "0 0 32px" },
   code: { fontFamily: "var(--font-mono)", fontSize: "0.9em", color: "var(--vb-blue-700)", background: "var(--vb-blue-50)", padding: "0.1em 0.4em", borderRadius: 4 },
+  install: { display: "inline-flex", alignItems: "center", gap: 10, background: "var(--code-bg)", border: "1px solid var(--slate-800)", borderRadius: "var(--radius-sm)", padding: "10px 16px", margin: "0 0 28px" },
+  installPrompt: { fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--slate-400)", userSelect: "none" },
+  installCode: { fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--code-fg)", letterSpacing: "-0.01em" },
   ctas: { display: "flex", gap: 10, alignItems: "center", marginBottom: 28, flexWrap: "wrap" },
   ctaPrimary: { display: "inline-flex", alignItems: "center", gap: 8, background: "var(--vb-blue-500)", color: "#fff", padding: "12px 20px", borderRadius: "var(--radius-sm)", fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: 15, border: 0 },
   ctaSecondary: { display: "inline-flex", alignItems: "center", background: "#fff", color: "var(--fg-1)", padding: "12px 20px", borderRadius: "var(--radius-sm)", fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: 15, border: "1px solid var(--border-2)" },

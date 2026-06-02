@@ -5,8 +5,8 @@ function FeatureGrid() {
       <div className="mk-container">
         <div style={fgStyles.head}>
           <div style={fgStyles.eyebrow}>What's in the box</div>
-          <h2 style={fgStyles.h2}>Two transports. One library.</h2>
-          <p style={fgStyles.sub}>WebDriver Classic (HTTP) for the command surface. WebDriver-BiDi (WebSocket) for the event-driven stuff. Both share one session — use whichever is right for the call.</p>
+          <h2 style={fgStyles.h2}>Web and mobile. One library.</h2>
+          <p style={fgStyles.sub}>WebDriver Classic (HTTP) for the command surface, WebDriver-BiDi (WebSocket) for the event-driven stuff, and native iOS/Android over WebDriverAgent + UiAutomator2 — all sharing one transport, locator, and assertion engine.</p>
         </div>
         <div style={fgStyles.grid}>
           {FEATURES.map((f, i) => (
@@ -49,16 +49,21 @@ const FEATURES = [
     body: "get_by_role · get_by_text · get_by_label · get_by_placeholder · get_by_test_id. Plus css= and xpath= for the raw escape hatch.",
   },
   {
+    em: "📲",
+    title: "Native iOS & Android",
+    body: "vebidor.mobile drives real apps over WebDriverAgent (iOS) and UiAutomator2 (Android) — same get_by_* selectors, auto-waiting locators, expect(), taps, swipes, and app/device lifecycle. No Node hop.",
+    chip: "✨ v5.0",
+    chipKind: "info",
+  },
+  {
     em: "📱",
     title: "Mobile-web emulation",
     body: "9 device presets (iPhone, Pixel, Galaxy, iPad). Viewport, DPR, UA, isMobile, hasTouch. Per-context locale, timezone, geolocation, permissions.",
-    chip: "✨ v4.2",
-    chipKind: "info",
   },
   {
     em: "🚀",
     title: "One-call launch()",
-    body: "Auto-detects driver and browser, picks a free port, opens a session, tears everything down on close(). No manual driver-start step.",
+    body: "Auto-detects driver and browser, picks a free port, opens a session, tears everything down on close(). launch_ios() / launch_android() do the same for devices.",
   },
 ];
 
