@@ -10,7 +10,7 @@ function TopNav({ onNavigate, activeId }) {
           <a href="../../index.html" style={tnStyles.brand}>
             <img src="../../assets/logo-vebidor.png" width="24" height="24" alt="vebidor" style={{ borderRadius: 5, display: "block" }} />
             <span style={tnStyles.wordmark}>vebidor</span>
-            <span style={tnStyles.version}>v4.2.0</span>
+            <span style={tnStyles.version}>v5.1.0</span>
           </a>
           <nav style={tnStyles.nav}>
             <a style={tnStyles.navLink} href="#quick-start" onClick={docNav("quick-start")}>Docs</a>

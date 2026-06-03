@@ -456,8 +456,41 @@ const archStyles = {
 // ───────── PAGE: Changelog ─────────
 const RELEASES = [
   {
+    v: "5.1.0", date: "2026-06-03", title: "Codegen / session recorder (web + mobile)",
+    chip: { kind: "info", em: "🎬", label: "Latest" },
+    blurb: "Record a live session → runnable vebidor source. Emitted locators go through the semantic get_by_* engines (verified unique at capture) — refactor-resistant, not brittle coordinates. Codegen is no longer a Playwright-only gap.",
+    sections: [
+      { kind: "added", items: [
+        "Web capture over WebDriver-BiDi — in-page recorder, semantic selector ladder, Alt+click assertions; verified on Edge (capture → emit → compile → replay round-trip)",
+        "Mobile capture — Android passive via `adb getevent` + UiAutomator2 a11y-tree hit-test; verified live on an emulator (5/5 synthesized selectors re-resolved)",
+        "iOS assisted REPL (tap / text / assert / done) — no passive touch stream on XCUITest",
+        "One action model + emitters feed both front-ends; CLI: v run tools/codegen.v web|android|ios",
+      ]},
+      { kind: "limit", items: [
+        "iOS synthesis is offline-tested but not yet exercised on a physical device.",
+      ]},
+    ],
+  },
+  {
+    v: "5.0.0", date: "2026-06-01", title: "Native mobile (iOS + Android)",
+    chip: { kind: "milestone", em: "📱", label: "Major release" },
+    blurb: "New vebidor.mobile module — native iOS/Android app automation driving WebDriverAgent (iOS) and the UiAutomator2 server (Android) directly over their HTTP sockets, the same backends Appium uses, with no Node middleware.",
+    sections: [
+      { kind: "added", items: [
+        "launch_ios() / launch_android() with .attach / .simulator / .spawn / .device; RAII close() tears down whatever was spawned",
+        "WDA + UiAutomator2 clients (find / click / send_keys / clear / text / attribute / page_source)",
+        "Lazy auto-waiting MobileLocator; cross-platform get_by_role / get_by_label / get_by_text / get_by_test_id",
+        "Playwright-style mobile.expect() assertions; W3C touch gestures (tap / long_press / swipe / drag_to / scroll_into_view)",
+        "App lifecycle (activate / terminate / query / install / remove) + device state (orientation, lock, geolocation, network)",
+      ]},
+      { kind: "limit", items: [
+        "Hybrid-app / WebView automation, secure Android unlock, and iOS per-session throttling are deferred.",
+      ]},
+    ],
+  },
+  {
     v: "4.2.0", date: "2026-05-26", title: "Mobile emulation",
-    chip: { kind: "info", em: "✨", label: "Latest" },
+    chip: { kind: "info", em: "✨", label: "Feature" },
     blurb: "Playwright-style mobile-web emulation over BiDi — browser-side, not Appium. Verified live against headless Edge.",
     sections: [
       { kind: "added", items: [
