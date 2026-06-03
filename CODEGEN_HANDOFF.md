@@ -58,10 +58,86 @@ bump `v.mod`. Keep mobile codegen labeled planned until Layer 3 is verified.
    invisible control char. The emitter builds the W3C Enter key via
    `"'" + r'\u' + code.hex() + "'"` in `press_key_literal` for this reason.
 
-## Verify on the Mac
+## Layer 3 build guide (mobile capture) — step by step
+
+New files: `mobile/codegen_capture.v` + `mobile/codegen_capture_test.v`; wire
+`android`/`ios` into `tools/codegen.v`. The `mobile` module already
+`import vebidor.webdriver`, so **reuse** `webdriver.RecordedAction` /
+`LocatorSpec` / `SelectorKind` / `emit_v_mobile` — do not redefine them. Existing
+reuse points: `page_source()` + `element_rect` ([`mobile/wda.v`](mobile/wda.v)),
+`tap_at` ([`mobile/gestures.v`](mobile/gestures.v)), the selector priority in
+[`mobile/selectors.v`](mobile/selectors.v).
+
+### Android passive tap-capture (primary; verified-live platform)
+1. **Screen size:** `adb -s <udid> shell wm size` → `Physical size: 1080x2400`.
+2. **Touch ranges:** `adb -s <udid> shell getevent -p` → find the device exposing
+   `ABS_MT_POSITION_X` / `ABS_MT_POSITION_Y`, read each axis `max` (often 0..32767,
+   NOT pixels). Isolate scaling in one tested fn:
+   `screen_x = round(raw_x * screenW / (maxX + 1))` (and y). If a touchscreen
+   already reports pixels, max ≈ screenW and the formula degenerates correctly.
+3. **Event stream:** spawn `adb -s <udid> shell getevent -lt` and parse lines.
+   Track the latest `ABS_MT_POSITION_X/Y`; **finger-up** = `ABS_MT_TRACKING_ID`
+   value `ffffffff` (or `BTN_TOUCH ... UP`). On finger-up with a recorded down
+   position → a tap at the scaled (x,y). (getevent is the only passive source;
+   there is no poll alternative for taps.)
+4. **Hit-test:** `s.page_source()` returns UiAutomator XML; nodes carry
+   `bounds="[x1,y1][x2,y2]"`. Collect nodes whose bounds contain (x,y); pick the
+   **deepest / smallest-area** (prefer `clickable="true"`).
+5. **Synthesize `LocatorSpec`** from node attrs, mirroring `mobile/selectors.v`,
+   verifying uniqueness by counting matches in the same XML:
+   - `content-desc` non-empty & unique → `kind: .test_id` (Android `get_by_test_id`
+     == accessibility id == content-desc).
+   - else `resource-id` → `kind: .xpath`, value `//*[@resource-id="X"]` (note:
+     `.test_id` maps to content-desc, **not** resource-id — so resource-id must go
+     via xpath).
+   - else `text` non-empty & unique → `kind: .text`.
+   - else `class` → reverse-map to a `MobileRole` (`android.widget.Button`→button,
+     `EditText`→text_field, …) + `text` as name → `kind: .role`.
+   - else positional xpath fallback.
+   Append `RecordedAction{ kind: .click, target: spec }` (tap == click for emit → `.tap()`).
+6. **Text entry (best-effort):** when a tap lands on `android.widget.EditText`,
+   re-dump `page_source()` every ~700ms and watch that node's `text`; on change,
+   emit `RecordedAction{ kind: .fill, target: spec, value: <final text> }`. Document
+   as best-effort.
+
+### iOS assisted mode (no passive touch stream → REPL)
+- `page_source()` is XCUITest XML; nodes carry `type`, `name`, `label`, `value`,
+  and `x/y/width/height`. Hit-test by rect containment (deepest/smallest).
+- REPL reading stdin: `tap <x> <y>`, `text <s>`, `assert <x> <y>`, `done`. Each
+  hit-tests, performs via existing `tap_at`/`fill`, and records. Synthesis for iOS:
+  `name` (accessibility id) → `.test_id`; `label` → `.label`; `type` → `.role`.
+
+### Scaffold sketch (`mobile/codegen_capture.v`)
+```v
+module mobile
+import vebidor.webdriver
+@[heap]
+pub struct MobileRecorder {
+mut:
+    session &MobileSession
+    actions []webdriver.RecordedAction
+}
+pub fn (mut s MobileSession) new_recorder() &MobileRecorder { ... }
+pub fn (mut r MobileRecorder) record_tap_at(x int, y int) !  { /* hit-test + append */ }
+pub fn (mut r MobileRecorder) emit() string {
+    plat := if r.session.platform == .ios { 'ios' } else { 'android' }
+    return webdriver.emit_v_mobile(r.actions, plat)
+}
 ```
-# one-time: make the module path a live symlink (avoids stale-copy gotcha)
+
+### Offline tests (CI-friendly, no device)
+- coordinate `scale_point` math; getevent line parser on captured sample lines;
+- hit-test against a sample UiAutomator XML string (deepest-node containment);
+- node → `LocatorSpec` synthesis (expected kind/value) for each priority branch.
+
+## Verify
+```
+# Mac one-time: live symlink so the module path tracks the working tree (no stale copy)
 ln -s "$(pwd)" ~/.vmodules/vebidor
-v test webdriver/codegen_test.v          # offline emitter + parser tests
-# web round-trip needs a chromedriver/edgedriver on PATH; mobile needs the emulator
+v test webdriver/codegen_test.v          # offline emitter + parser tests (no device)
+v test mobile/codegen_capture_test.v     # offline scaling/hit-test/synthesis (once added)
+
+# Web round-trip needs an edge/chromedriver on PATH.
+# Mobile: start the Android emulator, `adb devices`, then:
+v run tools/codegen.v android --out flow.v   # tap around, then Enter; replay flow.v to confirm
 ```
