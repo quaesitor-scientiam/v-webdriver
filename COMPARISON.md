@@ -57,8 +57,9 @@ Vebidor delivers Playwright's developer experience (lazy locators, semantic
 selectors, retrying assertions, one-call `launch()`, route/fulfill mocking) on
 a **W3C-standards transport** rather than Chromium-only CDP — so it reaches any
 conformant driver, Safari included. Playwright still wins on polished tooling:
-binary trace viewer, video capture, codegen. Those are conveniences, not
-capability gaps.
+binary trace viewer and video capture (conveniences, not capability gaps) — plus
+codegen, which is a genuine authoring-time gap on vebidor's roadmap (a standards-based
+recorder would emit semantic locators from the accessibility tree).
 
 ### vs Appium — *same backends, no Node hop*
 `vebidor.mobile` talks to the **exact same on-device servers** Appium uses

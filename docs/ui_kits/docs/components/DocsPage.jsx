@@ -195,7 +195,7 @@ function PageComparison() {
           ["Network mocking",                       { chip: "BiDi", kind: "success", em: "✅" }, { chip: "Yes", kind: "success", em: "✅" }, "route / fulfill / abort / continue"],
           ["Standards-based transport",             { chip: "W3C", kind: "milestone", em: "🏆" }, { chip: "CDP", kind: "neutral", em: "" }, "talks to any conformant driver, incl. Safari"],
           ["Real touch-event dispatch",             { chip: "Protocol limit", kind: "warning", em: "⚠️" }, { chip: "Yes", kind: "success", em: "✅" }, "BiDi doesn't expose CDP touch"],
-          ["Codegen recorder",                      { chip: "Deferred", kind: "neutral", em: "" }, { chip: "Yes", kind: "success", em: "✅" }, "high effort, low value"],
+          ["Codegen recorder",                      { chip: "Planned", kind: "neutral", em: "" }, { chip: "Yes", kind: "success", em: "✅" }, "real authoring gap; on roadmap (a11y-tree → semantic locators)"],
         ]}
       />
 
