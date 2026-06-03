@@ -36,7 +36,8 @@ per-tool docs:
 | **Cross-browser incl. Safari** | ✅ (W3C) | ✅ | ⚠️ bundled engines | n/a |
 | **Native iOS/Android** | ✅ no Node hop | ❌ | ❌ | ✅ |
 | **Hybrid-app webviews** | ❌ not yet | n/a | n/a | ✅ mature |
-| **Trace viewer / video / codegen** | ⚠️ JSON tracer | ⚠️ basic | ✅ full | ⚠️ basic |
+| **Trace viewer / video** | ⚠️ JSON tracer | ⚠️ basic | ✅ full | ⚠️ basic |
+| **Codegen / session recorder** | ✅ web + mobile | ❌ | ✅ | ❌ |
 | **Ecosystem / cloud grids** | early | ✅ huge | ✅ growing | ✅ huge |
 
 Legend: ✅ first-class · ⚠️ partial / via add-on · ❌ not available
@@ -56,10 +57,11 @@ capable.
 Vebidor delivers Playwright's developer experience (lazy locators, semantic
 selectors, retrying assertions, one-call `launch()`, route/fulfill mocking) on
 a **W3C-standards transport** rather than Chromium-only CDP — so it reaches any
-conformant driver, Safari included. Playwright still wins on polished tooling:
-binary trace viewer and video capture (conveniences, not capability gaps) — plus
-codegen, which is a genuine authoring-time gap on vebidor's roadmap (a standards-based
-recorder would emit semantic locators from the accessibility tree).
+conformant driver, Safari included. Vebidor now ships a **codegen / session
+recorder** too — web (over BiDi) and native mobile (over the a11y tree) — that
+emits semantic `get_by_*` locators rather than raw coordinates. Playwright still
+wins on polished tooling: the binary trace viewer and video capture
+(conveniences, not capability gaps).
 
 ### vs Appium — *same backends, no Node hop*
 `vebidor.mobile` talks to the **exact same on-device servers** Appium uses
@@ -124,7 +126,7 @@ and the only V-native option at all.
 
 ## Where the others still win
 
-- **Playwright** — binary trace viewer, video capture, codegen recorder.
+- **Playwright** — binary trace viewer, video capture.
 - **Appium** — hybrid-app webview contexts, mature cloud-grid + plugin
   ecosystem, years of edge-case hardening.
 - **Selenium** — 15 years of community, Selenium Grid, clients in every

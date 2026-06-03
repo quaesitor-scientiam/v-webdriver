@@ -1,5 +1,43 @@
 # WebDriver V Library - Changelog
 
+## [5.1.0] - 2026-06-03 - Codegen / session recorder (web + mobile)
+
+A **codegen recorder** that turns a live session into runnable vebidor
+source. Both front-ends feed one capture-agnostic action model and the same
+emitters, so the output goes through the semantic `get_by_*` engines a human
+would hand-write — refactor-resistant locators, not brittle coordinates.
+
+- **Web capture** (over WebDriver-BiDi) was already shipped and verified live
+  on Edge (capture → emit → compile → replay round-trip).
+- **Mobile capture (Layer 3)** is new this release and **verified live on the
+  Android emulator** (Pixel AVD, API 34; UiAutomator2 v10.2.1): an on-device
+  round-trip re-resolved 5/5 synthesized selectors against the live tree.
+
+### ✨ Added
+
+- **Mobile capture** ([`mobile/codegen_capture.v`](mobile/codegen_capture.v)) —
+  `MobileRecorder` (`record_tap_at` / `record_assert_at` / `record_text` /
+  `flush_pending_edit` / `emit`). Android is passive: `start_touch_stream()`
+  spawns `adb shell getevent -lt`, `GetEventParser` decodes finger-ups, and
+  `scale_point` maps raw touch coords → pixels using `screen_size()` and
+  `touch_axis_max()`. On each tap, `page_source()` is parsed (`parse_nodes`),
+  the smallest containing leaf is hit-tested (`hit_test_index`), and
+  `synth_locator` builds a `LocatorSpec` via the `mobile/selectors.v` priority
+  (test-id → resource-id/label → text → role → positional xpath). iOS uses an
+  assisted REPL (no passive touch stream on XCUITest).
+- **CLI** ([`tools/codegen.v`](tools/codegen.v)) — `android` (passive,
+  `getevent`-driven) and `ios` (`tap` / `text` / `assert` / `done` REPL)
+  subcommands, replacing the prior "not available" stub.
+- Offline test suite ([`mobile/codegen_capture_test.v`](mobile/codegen_capture_test.v))
+  covering the parsers, coordinate scaling, hit-test, and per-platform
+  synthesis branches.
+
+### 📝 Notes
+
+- iOS synthesis is offline-tested but not yet exercised on a physical device.
+- Real video capture and a binary trace viewer remain the only Playwright-only
+  conveniences; codegen is no longer a gap.
+
 ## [5.0.0] - 2026-06-01 - Native mobile (iOS + Android)
 
 A new **`vebidor.mobile`** module: native automation of real apps on iOS

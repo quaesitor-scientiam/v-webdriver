@@ -75,7 +75,6 @@ surface and BiDi for the event-driven features. Playwright achieves the same via
 | Feature | Why deferred |
 |---------|--------------|
 | Real video capture | No standardized BiDi screencast yet; would need periodic screenshots + ffmpeg. The screenshot/PDF primitives are the building blocks. |
-| Codegen / session recorder | Not built yet, but a real authoring-time gap — it bootstraps the locator-writing loop, which is the main cost of writing a suite. On the roadmap; a standards-based version would emit semantic `get_by_*` locators from the accessibility tree, not raw coordinates. |
 
 ---
 
@@ -154,7 +153,8 @@ last as it's the most driver-dependent).
 Vebidor now offers Playwright-style ergonomics (one-call launch, lazy auto-waiting
 locators, semantic selectors, web-first assertions, route/fulfill mocking) **and**
 standards-based WebDriver-BiDi coverage that meets or exceeds Selenium's — on a native V
-API, with no Node runtime or bundled browser download. The remaining Playwright-only items
-split two ways: the binary trace viewer and video capture are non-standard conveniences, while
-a codegen/session recorder is a genuine authoring-time gap that's on the roadmap (it'd emit
-semantic locators from the accessibility tree, staying standards-based).
+API, with no Node runtime or bundled browser download. Vebidor also ships a
+**codegen / session recorder** — web (over BiDi) and native mobile (over the
+accessibility tree) — that emits semantic `get_by_*` locators rather than raw
+coordinates. The remaining Playwright-only items are non-standard conveniences:
+the binary trace viewer and real video capture.

@@ -2,7 +2,7 @@
 
 A V language implementation of the W3C WebDriver protocol for browser automation.
 
-**Version 5.0.0** | **Playwright-style API + WebDriver-BiDi + native iOS/Android** | **100% Selenium parity** | **Production Ready**
+**Version 5.1.0** | **Playwright-style API + WebDriver-BiDi + native iOS/Android + codegen** | **100% Selenium parity** | **Production Ready**
 
 ## ⚡ Modern API (Playwright-style)
 
@@ -685,6 +685,16 @@ setup.
 
 See [COMPARISON_WITH_PLAYWRIGHT.md](COMPARISON_WITH_PLAYWRIGHT.md) for the full Playwright/Selenium feature mapping.
 
+## ✨ What's New in v5.1.0
+
+**🎬 Codegen / session recorder** — record a live session and emit runnable
+vebidor source via [`tools/codegen.v`](tools/codegen.v). Web capture runs over
+WebDriver-BiDi; **native mobile** capture is new — Android is passive (taps read
+from `adb getevent`, hit-tested against the live accessibility tree), iOS is an
+assisted REPL. Both synthesize semantic `get_by_*` locators rather than brittle
+coordinates. Verified live on the Android emulator (5/5 synthesized selectors
+re-resolved on-device). See [CODEGEN_HANDOFF.md](CODEGEN_HANDOFF.md).
+
 ## ✨ What's New in v5.0.0
 
 **📱 Native mobile automation** — a new [`vebidor.mobile`](mobile/) module that drives
@@ -867,11 +877,11 @@ For issues, questions, or contributions:
 
 **Status**: Production-ready for web automation (Playwright-style API + WebDriver-BiDi on top of 100% Selenium parity) and native mobile automation (iOS via WebDriverAgent + Android via UiAutomator2). 🎉
 
-**Version**: 5.0.0 (adds `vebidor.mobile` — native iOS/Android app automation; web stack unchanged: Playwright-style Locators/assertions, `launch()`, WebDriver-BiDi, mobile emulation, 4-browser support)
+**Version**: 5.1.0 (adds a codegen recorder for web + native mobile — emits semantic `get_by_*` locators; on top of v5.0.0's `vebidor.mobile` and the unchanged web stack: Playwright-style Locators/assertions, `launch()`, WebDriver-BiDi, mobile emulation, 4-browser support)
 
 **Selenium-parity phases**: ✅ Phase 1 | ✅ Phase 2 | ✅ Phase 3 | ✅ Phase 4 | ✅ Phase 5 | ✅ Phase 6 | ✅ Phase 7 | ✅ Phase 8
 
 **Playwright-parity roadmap**: ✅ Phase 0 (transport seam) | ✅ Phase 1 (locators/assertions) | ✅ Phase 2 (launch) | ✅ Phase 3 (BiDi transport) | ✅ Phase 4 (BiDi features) | ✅ Phase 5 (tooling) | ✅ BiDi gap closure vs Selenium
 
-**Latest Update**: 2026-06-01 - v5.0.0 native mobile automation (`vebidor.mobile`: iOS/WebDriverAgent + Android/UiAutomator2, cross-platform selectors, gestures, app lifecycle, device state)
+**Latest Update**: 2026-06-03 - v5.1.0 codegen recorder for web + native mobile (a11y-tree → semantic `get_by_*` locators; mobile capture verified live on the Android emulator)
 

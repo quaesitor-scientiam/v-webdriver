@@ -1,7 +1,11 @@
 # Codegen / session recorder — handoff
 
-Status as of this commit. Web codegen is built and **verified live on Edge**;
-mobile capture is designed but not yet built (needs an Android emulator).
+Status as of this commit. Web codegen is built and **verified live on Edge**.
+Mobile capture (Layer 3) is now built and **verified live on the Android
+emulator** — 24 offline tests plus an on-device round-trip (5/5 synthesized
+selectors re-resolved against the live UiAutomator2 tree). iOS uses the same
+core via an assisted REPL (no passive touch stream); its synthesis is
+offline-tested but not yet exercised on a physical device.
 
 ## What's done (this commit)
 
@@ -25,19 +29,26 @@ button/textbox/checkbox/link/Enter flow re-ran headless with exit 0).
 
 ## What's left
 
-### Mobile capture (Layer 3) — needs adb + a running Android emulator
-Design (from the approved plan):
-- **Android passive tap-capture (primary):** stream `adb shell getevent -lt`,
-  parse `ABS_MT_POSITION_X/Y` + `BTN_TOUCH`, scale touch-device coords → screen
-  using ranges from `getevent -p`. On touch-up: snapshot `page_source()` (XML a11y
-  tree w/ bounds), hit-test the topmost leaf containing the point, synthesize a
-  `LocatorSpec` via the `mobile/selectors.v` priority, record a tap. Text entry:
-  after a tap on an `EditText`, poll the node's `text` attr → emit a `fill`.
-- **Cross-platform assisted mode (iOS's only path):** operator points at a target
-  in a REPL; recorder hit-tests current `page_source()`, performs via existing
-  `tap`/`fill`/gestures, records. **iOS has no passive touch stream** → assisted only.
-- New file: `mobile/codegen_capture.v` (+ `_test.v`); wire `android`/`ios` into
-  `tools/codegen.v`. Verify on the emulator (the verified-live platform).
+### Mobile capture (Layer 3) — DONE (verified live on the Android emulator)
+Built in [`mobile/codegen_capture.v`](mobile/codegen_capture.v) (+ offline tests
+in [`mobile/codegen_capture_test.v`](mobile/codegen_capture_test.v)); `android`
+and `ios` are wired into [`tools/codegen.v`](tools/codegen.v).
+- **Android passive tap-capture (primary):** `MobileSession.start_touch_stream()`
+  spawns `adb shell getevent -lt`; `GetEventParser` parses `ABS_MT_POSITION_X/Y`
+  + `ABS_MT_TRACKING_ID ffffffff` / `BTN_TOUCH UP`; `scale_point` maps raw coords
+  → screen px using `screen_size()` (`wm size`) and `touch_axis_max()`
+  (`getevent -lp`). On finger-up: `record_tap_at` snapshots `page_source()`,
+  `parse_nodes` + `hit_test_index` find the smallest containing leaf, and
+  `synth_locator` builds a `LocatorSpec` via the `mobile/selectors.v` priority.
+  Text entry: a tap on an `EditText` defers to `flush_pending_edit`, which
+  re-reads the field's `text` and emits a `fill`.
+- **iOS assisted REPL (no passive touch stream):** `tap x y` / `text <s>` /
+  `assert x y` / `done`; each hit-tests the current `page_source()`, performs via
+  `tap_at` / `MobileLocator.fill`, and records. Synthesis is offline-tested;
+  not yet run on a physical device.
+- **Verified:** `v test mobile/codegen_capture_test.v` (24 cases) + a live
+  on-emulator round-trip — 5/5 synthesized selectors re-resolved against the
+  running UiAutomator2 tree, and a generated program type-checks.
 
 ### Docs (Layer 5) — not started
 Flip codegen "Planned" → shipped (web) across `COMPARISON.md`,
