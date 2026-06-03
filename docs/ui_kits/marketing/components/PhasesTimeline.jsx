@@ -44,7 +44,8 @@ const PHASES = [
   { phase: "Phase 8",   version: "3.0.0", title: "100% feature parity",           desc: "Async JS execution + Shadow DOM. Selenium coverage hits 100%.", coverage: 100, chip: "🏆 Milestone", chipKind: "milestone", final: true },
   { phase: "Playwright Phase 0–5", version: "4.0.0", title: "Modern ergonomics layer", desc: "Transport seam, lazy auto-waiting Locators, web-first assertions, launch(), full WebDriver-BiDi.", coverage: 100, chip: "✨ New layer", chipKind: "info" },
   { phase: "v4.1 → v4.2", version: "4.2.0", title: "Per-context + mobile emulation", desc: "storageState, per-context proxy/geo/permissions, capability probing, 9 device presets, viewport+UA+touch.", coverage: 100, chip: "Web", chipKind: "neutral" },
-  { phase: "Mob 1–7", version: "5.0.0", title: "Native iOS + Android", desc: "vebidor.mobile: real-app driving over WebDriverAgent + UiAutomator2, cross-platform get_by_* selectors, gestures, expect() assertions, app + device lifecycle.", coverage: 100, chip: "📲 Latest", chipKind: "info", final: true },
+  { phase: "Mob 1–7", version: "5.0.0", title: "Native iOS + Android", desc: "vebidor.mobile: real-app driving over WebDriverAgent + UiAutomator2, cross-platform get_by_* selectors, gestures, expect() assertions, app + device lifecycle.", coverage: 100, chip: "📲 Mobile", chipKind: "info" },
+  { phase: "Codegen", version: "5.1.0", title: "Codegen / session recorder", desc: "Record a live web or native-mobile session into runnable vebidor source; semantic get_by_* locators verified unique at capture — refactor-resistant, not brittle coordinates.", coverage: 100, chip: "🎬 Latest", chipKind: "info", final: true },
 ];
 
 const ptStyles = {

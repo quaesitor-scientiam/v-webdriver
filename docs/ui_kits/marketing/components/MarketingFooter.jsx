@@ -14,7 +14,7 @@ function MarketingFooter() {
           <p style={fStyles.tagline}>A V language implementation of W3C WebDriver, WebDriver-BiDi, and native iOS/Android automation.</p>
           <div style={fStyles.metaRow}>
             <span style={fStyles.metaChip}>MIT</span>
-            <span style={fStyles.metaChip}>v5.0.0</span>
+            <span style={fStyles.metaChip}>v5.1.0</span>
             <span style={fStyles.metaChip}>0 deps</span>
           </div>
         </div>

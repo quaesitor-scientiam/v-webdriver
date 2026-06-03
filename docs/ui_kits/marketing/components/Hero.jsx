@@ -8,14 +8,14 @@ function Hero() {
           <div style={heroStyles.eyebrow}>
             <span className="chip chip--milestone"><span className="emoji">🏆</span> 100% Selenium parity</span>
             <span style={heroStyles.eyebrowDot}>·</span>
-            <span style={heroStyles.eyebrowMuted}>v5.0.0 · 2026-06-02</span>
+            <span style={heroStyles.eyebrowMuted}>v5.1.0 · 2026-06-03</span>
           </div>
           <h1 style={heroStyles.h1}>Playwright-style<br />browser <span style={heroStyles.h1Accent}>+ mobile</span><br />automation, <span style={heroStyles.h1Accent}>natively in V</span>.</h1>
           <p style={heroStyles.lede}>
             A W3C WebDriver + WebDriver-BiDi client with lazy auto-waiting Locators, semantic
             selector engines, web-first assertions, network mocking, and one-call <code style={heroStyles.code}>launch()</code> —
-            and as of v5.0.0, <strong>native iOS &amp; Android</strong> driving over WebDriverAgent and
-            UiAutomator2. Verified live against headless Edge.
+            plus <strong>native iOS &amp; Android</strong> driving over WebDriverAgent and UiAutomator2,
+            and a <strong>codegen recorder</strong> that turns a live session into runnable tests. Verified live.
           </p>
           <div style={heroStyles.install}>
             <span style={heroStyles.installPrompt}>$</span>
