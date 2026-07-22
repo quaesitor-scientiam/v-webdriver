@@ -12,14 +12,13 @@ when unmodified, and when one locator is corrupted, the walk stops at exactly
 that step with the right reason (`not found: 0 matches (need 1)`) and a
 non-zero exit; on Android (emulator), both the "locator genuinely gone" and
 "locator resolves but the live action fails" reporting paths were verified
-live — see "What's left" for why a fully clean multi-step Android replay
-wasn't demonstrated (a separate, pre-existing `mobile` module bug the
-verification pass surfaced, not an audit-mode issue). Patch mode (`--patch`)
-is now also built and **verified live on Edge and Android**: a broken step
-correctly drops into live recording on the already-open session and splices
-a fresh program + sidecar (confirmed via the actual emitted `.v` source).
-iOS audit/patch mode is offline-tested only — no macOS host was available
-this pass.
+live, plus (after fixing a pre-existing `mobile` module actionability bug the
+verification pass surfaced — see "What's left") a genuinely clean multi-step
+replay. Patch mode (`--patch`) is now also built and **verified live on Edge
+and Android**: a broken step correctly drops into live recording on the
+already-open session and splices a fresh program + sidecar (confirmed via
+the actual emitted `.v` source). iOS audit/patch mode is offline-tested
+only — no macOS host was available this pass.
 
 ## What's done (this commit)
 
@@ -142,16 +141,20 @@ saved file (`webdriver.actions_to_json`/`actions_from_json` in
      no `.exe` suffix, so it silently never matched on Windows. Fixed with a
      local `exe_suffix()` helper, mirroring the one already in
      [webdriver/launcher.v](webdriver/launcher.v).
-  2. `MobileSession.is_element_displayed()` ([wda.v](mobile/wda.v)) hits
-     `/session/{id}/element/{id}/displayed`, which this UiAutomator2 server
-     version (v10.2.1) 404s on. Since `wait_until_actionable()` requires this
-     check unconditionally, **every actionability-gated call — `tap()`,
-     `fill()`, `to_be_visible()` — currently fails on Android** regardless of
-     whether the target exists. **Not fixed in this pass** — it needs its own
-     investigation into UiA2's actual supported API (see
-     [GAPS.md](GAPS.md) "Known functional limitations" §8) — but it explains
-     why only the two failure-reporting paths above could be demonstrated
-     live, not a clean end-to-end Android replay.
+  2. `MobileSession.is_element_displayed()`/`is_element_enabled()`
+     ([wda.v](mobile/wda.v)) hit the WDA-style shorthand endpoints
+     (`/displayed`, `/enabled`), which this UiAutomator2 server version
+     (v10.2.1) answers with `"unknown command"`. Since
+     `wait_until_actionable()` requires the displayed check unconditionally,
+     every actionability-gated call — `tap()`, `fill()`, `to_be_visible()` —
+     failed on Android regardless of whether the target existed; it's why
+     only the two failure-reporting paths above could be demonstrated live
+     that pass, not a clean end-to-end Android replay. **Now fixed** (in a
+     follow-up pass): both functions route through the generic W3C
+     `/attribute/{name}` endpoint on Android instead, which UiA2 does
+     implement correctly — confirmed live, including a full `audit_android`
+     clean pass on the exact flow that used to fail on this bug. See
+     [GAPS.md](GAPS.md) "Known functional limitations" §8.
   3. `audit_web`/`audit_mobile` originally called `exit(1)` directly on a
      broken step, which skips `defer { b.close() }`/`defer { s.close() }` —
      leaking the live session on every broken-locator report (the *common*

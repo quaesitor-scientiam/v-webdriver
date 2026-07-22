@@ -109,29 +109,34 @@ each links to the code or doc it concerns.
 7. **`minimize_window()` is untestable headless** — the test passes
    unconditionally in headless mode
    ([window_waits_test.v:55](webdriver/window_waits_test.v:55)).
-8. **`is_element_displayed`/actionability is broken on Android against
-   UiAutomator2 v10.2.1 — discovered live, not yet fixed.**
-   `MobileSession.is_element_displayed()` ([wda.v:164](mobile/wda.v:164)) GETs
-   `/session/{id}/element/{id}/displayed`, a WDA (iOS)-style endpoint that
-   this UiA2 server version (and likely others) returns 404 for
-   ("The requested resource could not be found..."). Since
+8. **`is_element_displayed`/`is_element_enabled` were broken on Android
+   against UiAutomator2 v10.2.1 — discovered live, now fixed.**
+   `MobileSession.is_element_displayed()`/`is_element_enabled()`
+   ([wda.v:164](mobile/wda.v:164)) GET the WDA (iOS)-style shorthand
+   endpoints `/session/{id}/element/{id}/displayed` /`/enabled`; live probing
+   confirmed UiA2 answers both with `"unknown command"` (its own
+   `UnknownCommandException`, not a plain 404, but the same effect). Since
    `MobileLocator.wait_until_actionable()` ([locator.v:65](mobile/locator.v:65))
-   unconditionally requires this check to pass, **every action needing
-   actionability — `tap()`, `fill()`, and `mobile.expect(...).to_be_visible()`
-   — currently fails on Android**, independent of whether the target element
-   genuinely exists (confirmed live: `find()`/`count()` succeed, then the
-   subsequent displayed-check 404s and the whole action times out after
-   30s). `find_element`/`find_elements` already needed UiA2-specific request
+   unconditionally requires the displayed check to pass, **every action
+   needing actionability — `tap()`, `fill()`, `to_be_visible()` — failed on
+   Android** regardless of whether the target element genuinely existed.
+   `find_element`/`find_elements` already needed UiA2-specific request
    translation elsewhere (see [MOBILE_TESTING.md](MOBILE_TESTING.md)'s
-   troubleshooting table); this endpoint apparently never got the same
-   treatment, and Android support for `to_be_visible()`/actionability may
-   never have been live-verified at all — `example_mob_android.v`'s own
-   smoke test calls `to_be_visible()` and just treats the failure as an
-   expected "selector mismatch" warning. Needs its own investigation into
-   what UiA2 actually exposes for element visibility (`page_source()`'s XML
-   already carries `displayed`/`enabled` attributes per node as a possible
-   fallback data source) — not fixed in this pass, since it's outside the
-   scope of the codegen audit-mode work that surfaced it.
+   troubleshooting table); these two never got the same treatment, and
+   Android actionability may never have been live-verified at all —
+   `example_mob_android.v`'s own smoke test calls `to_be_visible()` and just
+   treats the failure as an expected "selector mismatch" warning.
+   **Fix:** live probing found UiA2 *does* implement the generic W3C
+   `/attribute/{name}` endpoint correctly (`/attribute/displayed` and
+   `/attribute/enabled` both returned the right value against a real
+   element), so both functions now branch on `s.platform == .android` and
+   route through `element_attribute()` instead of the shorthand endpoint on
+   Android, mirroring the exact dispatch pattern `find_payload` already used
+   for find. iOS/WDA path unchanged. Confirmed live end-to-end: a direct
+   `is_element_displayed`/`is_element_enabled` call, a real `tap()` through
+   the full actionability gate, a real `to_be_visible()`, and a full
+   `audit_android` clean pass (`1/1 steps OK`) on a flow that failed on this
+   exact bug earlier in the same session all now succeed.
 9. **`detect_adb()` didn't resolve `adb.exe` on Windows — fixed.** The
    `$ANDROID_HOME/$ANDROID_SDK_ROOT` fallback in
    [uia2_bridge.v](mobile/uia2_bridge.v) built `platform-tools/adb` with no

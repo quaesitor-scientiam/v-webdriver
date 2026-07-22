@@ -160,14 +160,27 @@ pub fn (s MobileSession) element_text(el webdriver.ElementRef) !string {
 	return resp.value
 }
 
-// is_element_displayed asks WDA whether the element is currently visible.
+// is_element_displayed asks whether the element is currently visible. WDA
+// (iOS) implements the dedicated `/displayed` shorthand; UiAutomator2
+// (Android) doesn't — confirmed live, it answers "unknown command" — so
+// Android reads the same boolean through the generic `/attribute/displayed`
+// endpoint instead, which UiA2 does implement.
 pub fn (s MobileSession) is_element_displayed(el webdriver.ElementRef) !bool {
+	if s.platform == .android {
+		v := s.element_attribute(el, 'displayed')!
+		return v == 'true'
+	}
 	resp := s.get_request[bool]('/session/${s.session_id}/element/${el.element_id}/displayed')!
 	return resp.value
 }
 
-// is_element_enabled asks WDA whether the element accepts input.
+// is_element_enabled asks whether the element accepts input — same
+// WDA-vs-UiA2 endpoint split as is_element_displayed.
 pub fn (s MobileSession) is_element_enabled(el webdriver.ElementRef) !bool {
+	if s.platform == .android {
+		v := s.element_attribute(el, 'enabled')!
+		return v == 'true'
+	}
 	resp := s.get_request[bool]('/session/${s.session_id}/element/${el.element_id}/enabled')!
 	return resp.value
 }

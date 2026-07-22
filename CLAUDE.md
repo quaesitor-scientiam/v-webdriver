@@ -78,12 +78,14 @@ For mobile codegen, reuse `webdriver.RecordedAction` / `LocatorSpec` /
   drops back into live recording on the same session instead of stopping,
   splicing a replacement onto the good prefix — also **verified live on Edge
   and Android**. iOS (both modes) is still offline-tested only — needs a Mac.
-- **Android `mobile` module actionability is currently broken**:
-  `is_element_displayed()` hits an endpoint UiAutomator2 v10.2.1 doesn't
-  support, so `tap()`/`fill()`/`to_be_visible()` all fail on Android
-  regardless of whether the element exists. Discovered live, not yet fixed —
-  see GAPS.md "Known functional limitations" §8 before relying on those
-  calls on Android.
+- Android `mobile` actionability (`is_element_displayed`/`is_element_enabled`
+  in `mobile/wda.v`) was broken against UiAutomator2 v10.2.1 — the WDA-style
+  shorthand endpoints aren't implemented, so `tap()`/`fill()`/`to_be_visible()`
+  all failed regardless of whether the element existed. **Fixed**: both now
+  route through the generic `/attribute/{name}` endpoint on Android (UiA2
+  does implement that one), mirroring the platform-dispatch pattern
+  `find_payload` already used. Verified live (see GAPS.md "Known functional
+  limitations" §8 for the discovery/fix details).
 - iOS codegen synthesis is offline-tested only — never run on a real device;
   Android has a verified on-emulator round-trip.
 - Real touch-event dispatch is pending (BiDi lacks CDP `mobileEmulation`);
