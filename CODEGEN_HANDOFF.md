@@ -6,12 +6,20 @@ emulator** — 24 offline tests plus an on-device round-trip (5/5 synthesized
 selectors re-resolved against the live UiAutomator2 tree). iOS uses the same
 core via an assisted REPL (no passive touch stream); its synthesis is
 offline-tested but not yet exercised on a physical device. Audit mode (Layer
-4, `--update`) is now built and **verified live on Edge**: a recorded flow
-against a local test page replays cleanly (4/4 steps) when unmodified, and
-when one locator is corrupted, the walk stops at exactly that step with the
-right reason (`not found: 0 matches (need 1)`) and a non-zero exit — see
-"What's left". Android/iOS audit mode is offline-tested only; live
-verification there needs an emulator/device and is still pending.
+4, `--update`) is now built and **verified live on Edge and Android**: on
+Edge, a recorded flow against a local test page replays cleanly (4/4 steps)
+when unmodified, and when one locator is corrupted, the walk stops at exactly
+that step with the right reason (`not found: 0 matches (need 1)`) and a
+non-zero exit; on Android (emulator), both the "locator genuinely gone" and
+"locator resolves but the live action fails" reporting paths were verified
+live — see "What's left" for why a fully clean multi-step Android replay
+wasn't demonstrated (a separate, pre-existing `mobile` module bug the
+verification pass surfaced, not an audit-mode issue). Patch mode (`--patch`)
+is now also built and **verified live on Edge and Android**: a broken step
+correctly drops into live recording on the already-open session and splices
+a fresh program + sidecar (confirmed via the actual emitted `.v` source).
+iOS audit/patch mode is offline-tested only — no macOS host was available
+this pass.
 
 ## What's done (this commit)
 
@@ -84,20 +92,71 @@ saved file (`webdriver.actions_to_json`/`actions_from_json` in
   walk there, since later steps depend on state the broken step would have
   produced — then performs the step live so later steps see the right state.
   Prints a per-step ✓/✗ report and a summary; exits non-zero on any break.
-- **Deliberately out of scope:** an automatic patch/re-record splice mode
-  (drop back into live recording from the break point and merge a new suffix
-  onto the good prefix). Audit mode is diagnostic only — it pinpoints the
-  broken step, it doesn't fix it.
+- **Patch mode (`--patch`) — built and live-verified**, closing the
+  "audit mode only diagnoses" gap noted here previously. On a broken step,
+  `patch_web`/`patch_mobile` drop back into live recording on the same
+  already-open browser/session (safe mid-flow — `Recorder.start()` has no
+  fresh-navigation dependency, mobile recorders are stateless) instead of
+  just stopping, let the operator record a replacement, and splice
+  `old_acts[..broken_idx]` + the new suffix into a fresh program + sidecar
+  via `derive_out_path` (defaults to the original recording's paths, so
+  `--update flow.v.codegen.json --patch` closes the loop with no extra
+  flags). A broken `.goto` still always just stops (different failure class —
+  a URL-level break vs a stale locator — and the recorder never observes
+  navigation to auto-splice one). Required unconditionally launching
+  `audit_web` with `bidi: true` whenever `--patch` is passed, since BiDi
+  can't be attached to a session after creation — no behavior change when
+  `--patch` is absent. iOS's REPL loop was extracted into `run_ios_repl` so
+  `record_ios` and patch mode share it instead of duplicating.
 - **Verified:** offline round-trip tests for the JSON sidecar and both
   `locator_for` resolvers (`webdriver/codegen_test.v`,
-  `mobile/codegen_capture_test.v`), plus a live run on Edge against a local
-  test page: a clean recording replays 4/4 steps OK (exit 0), and a recording
-  with one corrupted locator (`role button "Click Us"`, which doesn't exist)
-  stops at exactly that step — `✗ step 3/4: click [role Click Us] — not
-  found: 0 matches (need 1)` — without running the dependent step after it,
-  and exits non-zero. Android/iOS audit mode is offline-tested only; live
-  verification there needs an emulator/device and is still pending — see
-  Verify below for the recipe once one's available.
+  `mobile/codegen_capture_test.v`), plus live runs:
+  - **Edge:** a clean recording replays 4/4 steps OK (exit 0), and a recording
+    with one corrupted locator (`role button "Click Us"`, which doesn't exist)
+    stops at exactly that step — `✗ step 3/4: click [role Click Us] — not
+    found: 0 matches (need 1)` — without running the dependent step after it,
+    and exits non-zero.
+  - **Android (emulator):** both failure-reporting paths verified — a
+    genuinely-nonexistent `test_id` is instantly caught (`✗ step 1/1: click
+    [test_id NoSuchIconXYZ] — not found: 0 matches (need 1)`), and a locator
+    that resolves but whose live action fails is also caught and reported
+    with the real reason. A fully clean multi-step replay wasn't demonstrated
+    — see the next bullet for why.
+  - **iOS: not run** — no macOS host was available this pass.
+- **Patch mode verified live on both platforms** — same corrupted-locator
+  sidecars as above, run with `--patch` and an immediately-supplied Enter (no
+  new interaction recorded, to isolate the splice mechanics from capture):
+  on Edge, the walk correctly replayed the good prefix, detected the break,
+  started a BiDi recorder on the live session, and wrote back a 2-action
+  program containing exactly the surviving prefix; on Android, same shape —
+  the touch-stream capture thread started and tore down cleanly, and the
+  spliced program/sidecar were written correctly (0 actions, since the one
+  recorded action was the broken one being replaced). Confirmed by reading
+  the actual emitted `.v` source in both cases, not just exit codes.
+- **Found and fixed two real bugs in `mobile/` while setting up this
+  verification** (both pre-existing, unrelated to audit mode itself, only
+  surfaced because this was the first time the mobile module was live-tested
+  on Windows):
+  1. `detect_adb()`'s `$ANDROID_HOME`/`$ANDROID_SDK_ROOT` fallback
+     ([uia2_bridge.v](mobile/uia2_bridge.v)) built `platform-tools/adb` with
+     no `.exe` suffix, so it silently never matched on Windows. Fixed with a
+     local `exe_suffix()` helper, mirroring the one already in
+     [webdriver/launcher.v](webdriver/launcher.v).
+  2. `MobileSession.is_element_displayed()` ([wda.v](mobile/wda.v)) hits
+     `/session/{id}/element/{id}/displayed`, which this UiAutomator2 server
+     version (v10.2.1) 404s on. Since `wait_until_actionable()` requires this
+     check unconditionally, **every actionability-gated call — `tap()`,
+     `fill()`, `to_be_visible()` — currently fails on Android** regardless of
+     whether the target exists. **Not fixed in this pass** — it needs its own
+     investigation into UiA2's actual supported API (see
+     [GAPS.md](GAPS.md) "Known functional limitations" §8) — but it explains
+     why only the two failure-reporting paths above could be demonstrated
+     live, not a clean end-to-end Android replay.
+  3. `audit_web`/`audit_mobile` originally called `exit(1)` directly on a
+     broken step, which skips `defer { b.close() }`/`defer { s.close() }` —
+     leaking the live session on every broken-locator report (the *common*
+     case). Fixed by returning an error instead and letting `main()`'s
+     existing handler `exit(1)` after the deferred cleanup runs.
 
 ### Docs (Layer 5) — DONE
 Flipped codegen "Planned" → shipped (web + mobile) across `COMPARISON.md`,
@@ -208,4 +267,12 @@ v run tools/codegen.v android --update flow.v.codegen.json
 # Hand-edit one entry's sel.value in the sidecar to a name that no longer
 # exists, re-run, and confirm it reports that exact step broken and exits
 # non-zero — this is the scenario the feature exists for.
+
+# Patch mode: same corrupted sidecar, add --patch. On the break it drops into
+# live recording on the already-open session/browser instead of stopping;
+# record a replacement, press Enter (or `done` on iOS), and it splices +
+# overwrites flow.v / flow.v.codegen.json. Re-run --update (no --patch) to
+# confirm the patched flow now replays clean:
+v run tools/codegen.v web    --update flow.v.codegen.json --patch
+v run tools/codegen.v android --update flow.v.codegen.json --patch
 ```

@@ -71,13 +71,19 @@ For mobile codegen, reuse `webdriver.RecordedAction` / `LocatorSpec` /
   `audit_android`/`audit_ios` in `tools/codegen.v`) replays a previously
   recorded flow live and reports which step's locator no longer resolves,
   instead of only being able to re-record from scratch. Recording always
-  writes the sidecar (`out + '.codegen.json'`) alongside `--out` now. Built
-  and offline-tested; `audit_web` is also **verified live on Edge** (clean
-  replay + corrupted-locator detection, both exit-code-correct).
-  Android/iOS audit mode is still offline-tested only — no emulator/device
-  was available to exercise it live. It only diagnoses — an automatic
-  patch/re-record splice mode is a deliberately deferred fast-follow (see
-  GAPS.md "Feature gaps").
+  writes the sidecar (`out + '.codegen.json'`) alongside `--out` now.
+  **Verified live on Edge and Android** (both failure-reporting paths on
+  Android — see GAPS.md "Known functional limitations" §8 for why a fully
+  clean Android replay couldn't be shown). Add `--patch` and a broken step
+  drops back into live recording on the same session instead of stopping,
+  splicing a replacement onto the good prefix — also **verified live on Edge
+  and Android**. iOS (both modes) is still offline-tested only — needs a Mac.
+- **Android `mobile` module actionability is currently broken**:
+  `is_element_displayed()` hits an endpoint UiAutomator2 v10.2.1 doesn't
+  support, so `tap()`/`fill()`/`to_be_visible()` all fail on Android
+  regardless of whether the element exists. Discovered live, not yet fixed —
+  see GAPS.md "Known functional limitations" §8 before relying on those
+  calls on Android.
 - iOS codegen synthesis is offline-tested only — never run on a real device;
   Android has a verified on-emulator round-trip.
 - Real touch-event dispatch is pending (BiDi lacks CDP `mobileEmulation`);

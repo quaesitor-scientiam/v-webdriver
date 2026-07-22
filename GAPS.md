@@ -6,31 +6,78 @@ each links to the code or doc it concerns.
 
 ## Feature gaps
 
-1. **Codegen audit mode (`--update`) — built, verified live on Edge; patch/heal
-   still deferred; mobile still offline-only.** Raised in external review of
-   the project: the real time sink in e2e test maintenance isn't diagnosing
-   failures after the fact (trace viewing), it's locators drifting stale after
-   every UI refactor and having to be rewritten. `write_program`
-   ([tools/codegen.v](tools/codegen.v)) now always writes a JSON sidecar
-   (`out + '.codegen.json'`) alongside the emitted program, and
+1. **Codegen audit + patch mode (`--update` / `--update --patch`) — both
+   built, verified live on Edge and Android; iOS still offline-only.** Raised
+   in external review of the project: the real time sink in e2e test maintenance
+   isn't diagnosing failures after the fact (trace viewing), it's locators
+   drifting stale after every UI refactor and having to be rewritten.
+   `write_program` ([tools/codegen.v](tools/codegen.v)) now always writes a
+   JSON sidecar (`out + '.codegen.json'`) alongside the emitted program, and
    `--update <sidecar.json>` (`audit_web`/`audit_android`/`audit_ios` in
    [tools/codegen.v](tools/codegen.v)) replays a persisted recording live via
    `webdriver.locator_for`/`mobile.MobileSession.locator_for` and reports
    exactly which step's `LocatorSpec` no longer resolves
    (`webdriver.locator_health`), stopping at the first break since later steps
    depend on state it would have produced. Covered by offline round-trip tests
-   in `webdriver/codegen_test.v` and `mobile/codegen_capture_test.v`, plus a
-   live run of `audit_web` on Edge against a local test page: an unmodified
-   recording replays 4/4 steps cleanly (exit 0); a recording with one
-   corrupted locator stops at exactly that step (`✗ step 3/4: click [role
-   Click Us] — not found: 0 matches (need 1)`) and exits non-zero. **Android/
-   iOS audit mode is still offline-tested only** — live verification needs an
-   emulator/device, which wasn't available to exercise this pass.
-   **Deliberately still out of scope:** an automatic patch/re-record splice
-   mode — on hitting a break, drop back into live recording from that exact
-   point (the session is already in the right state from the successful
-   prefix) and merge a newly-recorded suffix onto the good prefix. Audit mode
-   only diagnoses; it doesn't fix. That remains the natural fast-follow.
+   in `webdriver/codegen_test.v` and `mobile/codegen_capture_test.v`, plus live
+   runs:
+   - **Web (Edge):** an unmodified recording replays clean (exit 0); a
+     recording with one corrupted locator stops at exactly that step (`✗ step
+     3/4: click [role Click Us] — not found: 0 matches (need 1)`) and exits
+     non-zero.
+   - **Android (emulator):** the "locator genuinely gone" path (`✗ step 1/1:
+     click [test_id NoSuchIconXYZ] — not found: 0 matches (need 1)`) and the
+     "locator resolves but the live action fails" path (`resolved but failed
+     to perform: ...`) both verified — see "Known functional limitations" for
+     why a fully clean multi-step Android replay couldn't be demonstrated in
+     this pass (a separate, pre-existing bug, not audit mode).
+   - **iOS: still offline-tested only** — no macOS host was available in this
+     pass to run WebDriverAgent.
+
+   While verifying, found and fixed a real bug in `audit_web`/`audit_mobile`:
+   they called `exit(1)` directly on a broken step, which skips the
+   `defer { b.close() }` / `defer { s.close() }` cleanup — every broken-locator
+   report (the *common* case for this feature) was leaking the live
+   browser/device session. Fixed by returning an error instead, so the
+   existing `defer` fires normally and `main()`'s standard error handler does
+   the `exit(1)`.
+
+   **Patch mode (`--patch`) — built and live-verified, closing the fast-follow
+   named above.** On a broken step, instead of just reporting and stopping,
+   `patch_web`/`patch_mobile` ([tools/codegen.v](tools/codegen.v)) drop back
+   into live recording on the *same already-open* browser/session (proven
+   safe to do mid-flow: `Recorder.start()`
+   ([codegen_script.v:186](webdriver/codegen_script.v:186)) has no
+   fresh-navigation dependency, and the mobile recorders are stateless), let
+   the operator record a replacement, then splice `old_acts[..broken_idx]` +
+   the newly recorded suffix into a fresh program + sidecar via
+   `derive_out_path` (defaults to overwriting the paths the original
+   recording used, so `--update flow.v.codegen.json --patch` naturally closes
+   the loop). A broken `.goto` deliberately still just stops — a URL-level
+   break is a different failure class than a stale locator, and the recorder
+   never observes navigation to auto-splice one. One real, load-bearing
+   constraint surfaced during design: BiDi can't be attached to a session
+   after it's created, so `audit_web` now launches with `bidi: true`
+   whenever `--patch` is passed (unconditionally-false, i.e. no behavior
+   change, when it isn't). Live-verified end to end on both platforms: a
+   corrupted sidecar's broken step is detected, patch mode starts recording
+   on the live session, and the spliced program + sidecar are written
+   correctly (confirmed via the actual emitted `.v` source, not just exit
+   codes) — Android additionally confirmed the touch-stream capture thread
+   (reused from `record_android`) starts and tears down cleanly mid-audit.
+   iOS not verified live (needs a Mac, out of reach in this pass) — but reuses
+   the same `run_ios_repl` helper `record_ios` already uses, now extracted for
+   sharing rather than duplicated.
+
+   **Separately discovered while wiring this up (unrelated to this feature,
+   noted for awareness):** `tools/` has no `v test`-able surface — it holds
+   two separate `module main` programs (`codegen.v`, `start_edgedriver.v`)
+   that collide on a duplicate `fn main()` the moment any file in that
+   directory is compiled together for testing. A `derive_out_path`/`has_flag`
+   offline test was attempted and dropped for this reason; those two pure
+   helpers are covered by the live verification above instead. Splitting
+   `tools/` into per-tool subdirectories would fix this generally, but is out
+   of scope here.
 
 ## Known functional limitations
 
@@ -62,6 +109,39 @@ each links to the code or doc it concerns.
 7. **`minimize_window()` is untestable headless** — the test passes
    unconditionally in headless mode
    ([window_waits_test.v:55](webdriver/window_waits_test.v:55)).
+8. **`is_element_displayed`/actionability is broken on Android against
+   UiAutomator2 v10.2.1 — discovered live, not yet fixed.**
+   `MobileSession.is_element_displayed()` ([wda.v:164](mobile/wda.v:164)) GETs
+   `/session/{id}/element/{id}/displayed`, a WDA (iOS)-style endpoint that
+   this UiA2 server version (and likely others) returns 404 for
+   ("The requested resource could not be found..."). Since
+   `MobileLocator.wait_until_actionable()` ([locator.v:65](mobile/locator.v:65))
+   unconditionally requires this check to pass, **every action needing
+   actionability — `tap()`, `fill()`, and `mobile.expect(...).to_be_visible()`
+   — currently fails on Android**, independent of whether the target element
+   genuinely exists (confirmed live: `find()`/`count()` succeed, then the
+   subsequent displayed-check 404s and the whole action times out after
+   30s). `find_element`/`find_elements` already needed UiA2-specific request
+   translation elsewhere (see [MOBILE_TESTING.md](MOBILE_TESTING.md)'s
+   troubleshooting table); this endpoint apparently never got the same
+   treatment, and Android support for `to_be_visible()`/actionability may
+   never have been live-verified at all — `example_mob_android.v`'s own
+   smoke test calls `to_be_visible()` and just treats the failure as an
+   expected "selector mismatch" warning. Needs its own investigation into
+   what UiA2 actually exposes for element visibility (`page_source()`'s XML
+   already carries `displayed`/`enabled` attributes per node as a possible
+   fallback data source) — not fixed in this pass, since it's outside the
+   scope of the codegen audit-mode work that surfaced it.
+9. **`detect_adb()` didn't resolve `adb.exe` on Windows — fixed.** The
+   `$ANDROID_HOME/$ANDROID_SDK_ROOT` fallback in
+   [uia2_bridge.v](mobile/uia2_bridge.v) built `platform-tools/adb` with no
+   platform suffix; `os.exists()` does no extension resolution of its own, so
+   this fallback silently never worked on Windows (only `command_on_path`
+   finding `adb` first would). Fixed by adding a local `exe_suffix()` (mirrors
+   the existing one in [webdriver/launcher.v](webdriver/launcher.v)) and
+   appending it to the candidate path. Confirmed live: `mobile.launch_android`
+   failed with "adb not found" before the fix and worked after, against a
+   real emulator.
 
 ## Issues
 
