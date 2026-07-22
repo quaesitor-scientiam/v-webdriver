@@ -61,9 +61,7 @@ pub fn (r &MobileRecorder) emit() string {
 pub fn (mut r MobileRecorder) record_tap_at(x int, y int) ! {
 	r.flush_pending_edit()!
 	nodes := r.snapshot_nodes()!
-	idx := hit_test_index(nodes, x, y) or {
-		return error('no UI element found at (${x}, ${y})')
-	}
+	idx := hit_test_index(nodes, x, y) or { return error('no UI element found at (${x}, ${y})') }
 	node := nodes[idx]
 	spec := synth_locator(r.session.platform, nodes, idx)
 	if is_editable(r.session.platform, node) {
@@ -83,9 +81,7 @@ pub fn (mut r MobileRecorder) record_tap_at(x int, y int) ! {
 pub fn (mut r MobileRecorder) record_assert_at(x int, y int) ! {
 	r.flush_pending_edit()!
 	nodes := r.snapshot_nodes()!
-	idx := hit_test_index(nodes, x, y) or {
-		return error('no UI element found at (${x}, ${y})')
-	}
+	idx := hit_test_index(nodes, x, y) or { return error('no UI element found at (${x}, ${y})') }
 	spec := synth_locator(r.session.platform, nodes, idx)
 	r.actions << webdriver.RecordedAction{
 		kind:   .assert_visible
@@ -152,24 +148,63 @@ fn (r &MobileRecorder) current_text(spec webdriver.LocatorSpec) !string {
 
 // locator_for rebuilds a live MobileLocator from a synthesized spec, mirroring
 // the emitter's mobile_locator_expr so what we perform matches what we emit.
-fn (r &MobileRecorder) locator_for(spec webdriver.LocatorSpec) MobileLocator {
+// Lives on MobileSession (not just the recorder) so audit mode can resolve a
+// persisted spec against the live device without needing a MobileRecorder.
+pub fn (s &MobileSession) locator_for(spec webdriver.LocatorSpec) MobileLocator {
 	return match spec.kind {
 		.test_id {
-			r.session.get_by_test_id(spec.value)
+			s.get_by_test_id(spec.value)
 		}
 		.label, .placeholder {
-			r.session.get_by_label(spec.value)
+			s.get_by_label(spec.value)
 		}
 		.text {
-			r.session.get_by_text(spec.value)
+			s.get_by_text(spec.value)
 		}
 		.css, .xpath {
-			r.session.xpath(spec.value)
+			s.xpath(spec.value)
 		}
 		.role {
-			role := role_from_string(spec.role) or { return r.session.get_by_text(spec.value) }
-			r.session.get_by_role(role, spec.value)
+			role := role_from_string(spec.role) or { return s.get_by_text(spec.value) }
+			s.get_by_role(role, spec.value)
 		}
+	}
+}
+
+// locator_for delegates to the session so the recorder and audit mode share
+// exactly one spec->locator implementation.
+fn (r &MobileRecorder) locator_for(spec webdriver.LocatorSpec) MobileLocator {
+	return r.session.locator_for(spec)
+}
+
+// perform_action performs one recorded step live on the device — the
+// execution twin of mobile_action_line (webdriver/codegen.v), which only
+// emits a string of V source for it. goto/select_option/press have no mobile
+// equivalent and are silently skipped here too, exactly as the emitter drops
+// them. Used by audit mode to replay a persisted recording so later steps
+// see the state earlier ones produced.
+pub fn (mut s MobileSession) perform_action(a webdriver.RecordedAction) ! {
+	if a.kind == .goto || a.kind == .select_option || a.kind == .press {
+		return
+	}
+	loc := s.locator_for(a.target)
+	match a.kind {
+		.click, .check {
+			loc.tap()!
+		}
+		.fill {
+			loc.fill(a.value)!
+		}
+		.assert_visible {
+			expect(loc).to_be_visible()!
+		}
+		.assert_text {
+			expect(loc).to_have_text(a.value)!
+		}
+		.assert_contain_text {
+			expect(loc).to_contain_text(a.value)!
+		}
+		else {}
 	}
 }
 
@@ -373,8 +408,8 @@ fn xml_unescape(s string) string {
 	if !s.contains('&') {
 		return s
 	}
-	return s.replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"').replace('&apos;',
-		"'").replace('&amp;', '&')
+	return s.replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"').replace('&apos;', "'").replace('&amp;',
+		'&')
 }
 
 // node_rect derives a node's screen rectangle: Android `bounds="[x1,y1][x2,y2]"`

@@ -5,7 +5,13 @@ Mobile capture (Layer 3) is now built and **verified live on the Android
 emulator** — 24 offline tests plus an on-device round-trip (5/5 synthesized
 selectors re-resolved against the live UiAutomator2 tree). iOS uses the same
 core via an assisted REPL (no passive touch stream); its synthesis is
-offline-tested but not yet exercised on a physical device.
+offline-tested but not yet exercised on a physical device. Audit mode (Layer
+4, `--update`) is now built and **verified live on Edge**: a recorded flow
+against a local test page replays cleanly (4/4 steps) when unmodified, and
+when one locator is corrupted, the walk stops at exactly that step with the
+right reason (`not found: 0 matches (need 1)`) and a non-zero exit — see
+"What's left". Android/iOS audit mode is offline-tested only; live
+verification there needs an emulator/device and is still pending.
 
 ## What's done (this commit)
 
@@ -50,11 +56,54 @@ and `ios` are wired into [`tools/codegen.v`](tools/codegen.v).
   on-emulator round-trip — 5/5 synthesized selectors re-resolved against the
   running UiAutomator2 tree, and a generated program type-checks.
 
-### Docs (Layer 5) — not started
-Flip codegen "Planned" → shipped (web) across `COMPARISON.md`,
+### Audit mode / update workflow (Layer 4) — built, offline-verified
+
+Closes a gap external review flagged: codegen only ever generated a program
+from scratch, so after a UI refactor the only option was to re-record the
+whole flow and hand-diff it back in. `--update <sidecar.json>` replays a
+previously recorded flow live and reports exactly which step's locator no
+longer resolves, instead of that. Recording now always writes a JSON sidecar
+(`out + '.codegen.json'`) alongside `--out` — the same wire shape the browser
+recorder already sends over console.debug (`parse_recorded`/`parse_kind` in
+`codegen_script.v`), so one parser handles both the live wire protocol and a
+saved file (`webdriver.actions_to_json`/`actions_from_json` in
+`webdriver/codegen.v`).
+
+- **Live locator resolution:** `webdriver.WebDriver.locator_for(spec)` (web)
+  and `mobile.MobileSession.locator_for(spec)` (mobile — promoted from the
+  recorder so the recorder and audit mode share one implementation) rebuild a
+  live `Locator`/`MobileLocator` from a persisted `LocatorSpec`, mirroring
+  `web_locator_expr`/`mobile_locator_expr`'s match arms exactly.
+- **Live execution:** `Browser.perform_action` / `MobileSession.perform_action`
+  are the execution twins of `web_action_line`/`mobile_action_line` — they run
+  a recorded step for real instead of emitting a string of V source for it.
+- **The audit walk** (`audit_web` / `audit_android` / `audit_ios` in
+  `tools/codegen.v`, sharing `audit_mobile` on the mobile side): resolves each
+  step's locator first (`webdriver.locator_health`, a shared pure function) —
+  0 matches or an unexpected extra match is reported broken and stops the
+  walk there, since later steps depend on state the broken step would have
+  produced — then performs the step live so later steps see the right state.
+  Prints a per-step ✓/✗ report and a summary; exits non-zero on any break.
+- **Deliberately out of scope:** an automatic patch/re-record splice mode
+  (drop back into live recording from the break point and merge a new suffix
+  onto the good prefix). Audit mode is diagnostic only — it pinpoints the
+  broken step, it doesn't fix it.
+- **Verified:** offline round-trip tests for the JSON sidecar and both
+  `locator_for` resolvers (`webdriver/codegen_test.v`,
+  `mobile/codegen_capture_test.v`), plus a live run on Edge against a local
+  test page: a clean recording replays 4/4 steps OK (exit 0), and a recording
+  with one corrupted locator (`role button "Click Us"`, which doesn't exist)
+  stops at exactly that step — `✗ step 3/4: click [role Click Us] — not
+  found: 0 matches (need 1)` — without running the dependent step after it,
+  and exits non-zero. Android/iOS audit mode is offline-tested only; live
+  verification there needs an emulator/device and is still pending — see
+  Verify below for the recipe once one's available.
+
+### Docs (Layer 5) — DONE
+Flipped codegen "Planned" → shipped (web + mobile) across `COMPARISON.md`,
 `COMPARISON_WITH_PLAYWRIGHT.md`, `docs/preview/comparison-table.html`,
-`docs/ui_kits/docs/components/DocsPage.jsx`; update `README.md`, `CHANGELOG.md`,
-bump `v.mod`. Keep mobile codegen labeled planned until Layer 3 is verified.
+`docs/ui_kits/docs/components/DocsPage.jsx`, `README.md`, `CHANGELOG.md`, and
+`v.mod` (bumped to v5.1.0) — see `e5df862`/`8c0972c` in git history.
 
 ## Environment gotchas (these will bite on the Mac too)
 
@@ -145,10 +194,18 @@ pub fn (mut r MobileRecorder) emit() string {
 ```
 # Mac one-time: live symlink so the module path tracks the working tree (no stale copy)
 ln -s "$(pwd)" ~/.vmodules/vebidor
-v test webdriver/codegen_test.v          # offline emitter + parser tests (no device)
-v test mobile/codegen_capture_test.v     # offline scaling/hit-test/synthesis (once added)
+v test webdriver/codegen_test.v          # offline emitter + parser + audit-helper tests
+v test mobile/codegen_capture_test.v     # offline scaling/hit-test/synthesis + locator_for tests
 
 # Web round-trip needs an edge/chromedriver on PATH.
 # Mobile: start the Android emulator, `adb devices`, then:
 v run tools/codegen.v android --out flow.v   # tap around, then Enter; replay flow.v to confirm
+
+# Audit mode: recording (above) also writes flow.v.codegen.json. Re-run against
+# the same page/app to confirm it still resolves cleanly (exit 0):
+v run tools/codegen.v web    --update flow.v.codegen.json
+v run tools/codegen.v android --update flow.v.codegen.json
+# Hand-edit one entry's sel.value in the sidecar to a name that no longer
+# exists, re-run, and confirm it reports that exact step broken and exits
+# non-zero — this is the scenario the feature exists for.
 ```

@@ -7,11 +7,19 @@ import os
 // vebidor codegen CLI — record a live session and emit a runnable vebidor
 // test. Web: launches a headed browser, injects the recorder over BiDi, and
 // (when you press Enter) writes the generated program. Mobile: captures taps
-// on a device/emulator and synthesizes cross-platform selectors.
+// on a device/emulator and synthesizes cross-platform selectors. Recording
+// also writes a JSON sidecar (`out + '.codegen.json'`) next to `--out`; pass
+// that sidecar back via `--update` to replay the flow live and audit which
+// locators still resolve, instead of only being able to re-record from
+// scratch.
 //
 //   v run tools/codegen.v web <url>     [--out file.v] [--browser edge|chrome]
 //   v run tools/codegen.v android       [--out file.v] [--udid <id>] [--uia2-url <url>]
 //   v run tools/codegen.v ios           [--out file.v] [--wda-url <url>] [--bundle <id>]
+//
+//   v run tools/codegen.v web    --update file.v.codegen.json [--browser edge|chrome]
+//   v run tools/codegen.v android --update file.v.codegen.json [--udid <id>] [--uia2-url <url>]
+//   v run tools/codegen.v ios    --update file.v.codegen.json [--wda-url <url>] [--bundle <id>]
 //
 // Android is passive: tap the device, taps are captured via `adb getevent`.
 // iOS has no passive touch stream, so it's a small REPL (`tap x y` / `text …`
@@ -25,9 +33,17 @@ fn usage() {
 	eprintln('  v run tools/codegen.v android    [--out file.v] [--udid <id>] [--uia2-url <url>]')
 	eprintln('  v run tools/codegen.v ios        [--out file.v] [--wda-url <url>] [--bundle <id>]')
 	eprintln('')
+	eprintln('  v run tools/codegen.v web    --update <sidecar.json> [--browser edge|chrome]')
+	eprintln('  v run tools/codegen.v android --update <sidecar.json> [--udid <id>] [--uia2-url <url>]')
+	eprintln('  v run tools/codegen.v ios    --update <sidecar.json> [--wda-url <url>] [--bundle <id>]')
+	eprintln('')
 	eprintln('Web : records until you press Enter; Alt+click records an assertion.')
 	eprintln('Android: tap the device/emulator; press Enter here to finish (UiA2 must be running).')
 	eprintln('iOS : REPL - `tap x y`, `text <s>`, `assert x y`, `done` (WDA must be running).')
+	eprintln('')
+	eprintln('--update replays the sidecar live and reports which step (if any) no longer')
+	eprintln('resolves, instead of recording a fresh flow. Recording always writes the')
+	eprintln('sidecar (out + ".codegen.json") next to --out so a later run can audit it.')
 }
 
 fn main() {
@@ -36,23 +52,46 @@ fn main() {
 		usage()
 		exit(2)
 	}
+	rest := args[1..]
+	is_update := flag_value(rest, '--update', '') != ''
 	match args[0] {
 		'web' {
-			record_web(args[1..]) or {
-				eprintln('error: ${err}')
-				exit(1)
+			if is_update {
+				audit_web(rest) or {
+					eprintln('error: ${err}')
+					exit(1)
+				}
+			} else {
+				record_web(rest) or {
+					eprintln('error: ${err}')
+					exit(1)
+				}
 			}
 		}
 		'android' {
-			record_android(args[1..]) or {
-				eprintln('error: ${err}')
-				exit(1)
+			if is_update {
+				audit_android(rest) or {
+					eprintln('error: ${err}')
+					exit(1)
+				}
+			} else {
+				record_android(rest) or {
+					eprintln('error: ${err}')
+					exit(1)
+				}
 			}
 		}
 		'ios' {
-			record_ios(args[1..]) or {
-				eprintln('error: ${err}')
-				exit(1)
+			if is_update {
+				audit_ios(rest) or {
+					eprintln('error: ${err}')
+					exit(1)
+				}
+			} else {
+				record_ios(rest) or {
+					eprintln('error: ${err}')
+					exit(1)
+				}
 			}
 		}
 		else {
@@ -72,14 +111,19 @@ fn flag_value(args []string, name string, def string) string {
 	return def
 }
 
-// write_program prints the generated source to stdout or writes it to `out`.
-fn write_program(code string, n int, out string) ! {
+// write_program prints the generated source to stdout, or writes it to `out`
+// alongside a JSON sidecar (`out + '.codegen.json'`) holding the recorded
+// actions — the persisted form a later `--update` run reloads to audit the
+// flow against a changed page/app.
+fn write_program(code string, acts []webdriver.RecordedAction, out string) ! {
 	if out == '' {
 		println(code)
-	} else {
-		os.write_file(out, code)!
-		eprintln('Wrote ${n} actions to ${out}')
+		return
 	}
+	os.write_file(out, code)!
+	sidecar := out + '.codegen.json'
+	os.write_file(sidecar, webdriver.actions_to_json(acts))!
+	eprintln('Wrote ${acts.len} actions to ${out} (sidecar: ${sidecar})')
 }
 
 fn record_web(args []string) ! {
@@ -141,12 +185,7 @@ fn record_web(args []string) ! {
 	}]
 	acts << rec.actions()
 	code := webdriver.emit_v_web(acts)
-	if out == '' {
-		println(code)
-	} else {
-		os.write_file(out, code)!
-		eprintln('Wrote ${acts.len} actions to ${out}')
-	}
+	write_program(code, acts, out)!
 }
 
 // first_adb_device returns the first device id reported by `adb devices`, or
@@ -207,7 +246,7 @@ fn record_android(args []string) ! {
 
 	rec.flush_pending_edit() or {}
 	acts := rec.actions()
-	write_program(rec.emit(), acts.len, out)!
+	write_program(rec.emit(), acts, out)!
 }
 
 // capture_taps reads the getevent stream line-by-line, scales each finger-up
@@ -307,5 +346,158 @@ fn record_ios(args []string) ! {
 
 	rec.flush_pending_edit() or {}
 	acts := rec.actions()
-	write_program(rec.emit(), acts.len, out)!
+	write_program(rec.emit(), acts, out)!
+}
+
+// --- audit mode --------------------------------------------------------
+//
+// Replays a previously recorded flow (loaded from a --update sidecar) live
+// and reports which step's locator no longer resolves, instead of only
+// being able to re-record from scratch after a UI refactor. Stops at the
+// first broken step since later steps depend on state the broken step
+// would have produced.
+
+// audit_web replays a recorded web flow against a live page.
+fn audit_web(args []string) ! {
+	update := flag_value(args, '--update', '')
+	if update == '' {
+		return error('--update <sidecar.json> is required')
+	}
+	browser := flag_value(args, '--browser', 'edge')
+
+	acts := webdriver.actions_from_json(os.read_file(update)!)!
+	if acts.len == 0 {
+		return error('${update} has no recorded actions')
+	}
+
+	opts := webdriver.LaunchOptions{
+		headless: false
+	}
+	mut b := if browser == 'chrome' {
+		webdriver.launch_chrome(opts)!
+	} else {
+		webdriver.launch_edge(opts)!
+	}
+	defer { b.close() }
+
+	mut passed := 0
+	for idx, a in acts {
+		if a.kind == .goto {
+			b.goto(a.value) or {
+				report_broken(idx, acts.len, passed, '${a.kind} ${a.value}', err.msg())
+				exit(1)
+			}
+			eprintln('✓ step ${idx + 1}/${acts.len}: goto ${a.value}')
+			passed++
+			continue
+		}
+		n := b.wd.locator_for(a.target).count() or { 0 }
+		reason := webdriver.locator_health(n, a.target.nth)
+		if reason != '' {
+			report_broken(idx, acts.len, passed, '${a.kind} [${a.target.kind} ${a.target.value}]',
+				reason)
+			exit(1)
+		}
+		b.perform_action(a) or {
+			report_broken(idx, acts.len, passed, '${a.kind} [${a.target.kind} ${a.target.value}]',
+				'resolved but failed to perform: ${err}')
+			exit(1)
+		}
+		eprintln('✓ step ${idx + 1}/${acts.len}: ${a.kind}')
+		passed++
+	}
+	eprintln('${passed}/${acts.len} steps OK — flow still resolves cleanly.')
+}
+
+// audit_android replays a recorded Android flow against the live device/emulator.
+fn audit_android(args []string) ! {
+	update := flag_value(args, '--update', '')
+	if update == '' {
+		return error('--update <sidecar.json> is required')
+	}
+	uia2_url := flag_value(args, '--uia2-url', 'http://localhost:6790')
+	mut udid := flag_value(args, '--udid', '')
+	if udid == '' {
+		udid = first_adb_device()
+		if udid == '' {
+			return error('no Android device found; start an emulator or pass --udid (see `adb devices`)')
+		}
+	}
+
+	acts := webdriver.actions_from_json(os.read_file(update)!)!
+	if acts.len == 0 {
+		return error('${update} has no recorded actions')
+	}
+
+	mut s := mobile.launch_android(mobile.AndroidOptions{
+		mode:     .attach
+		udid:     udid
+		uia2_url: uia2_url
+	})!
+	s.device_udid = udid
+	defer { s.close() }
+
+	audit_mobile(mut s, acts)
+}
+
+// audit_ios replays a recorded iOS flow against the live device/simulator.
+fn audit_ios(args []string) ! {
+	update := flag_value(args, '--update', '')
+	if update == '' {
+		return error('--update <sidecar.json> is required')
+	}
+	wda_url := flag_value(args, '--wda-url', 'http://localhost:8100')
+	bundle := flag_value(args, '--bundle', '')
+
+	acts := webdriver.actions_from_json(os.read_file(update)!)!
+	if acts.len == 0 {
+		return error('${update} has no recorded actions')
+	}
+
+	mut s := mobile.launch_ios(mobile.IOSOptions{
+		mode:      .attach
+		wda_url:   wda_url
+		bundle_id: bundle
+	})!
+	defer { s.close() }
+
+	audit_mobile(mut s, acts)
+}
+
+// audit_mobile walks a recorded action list against a live mobile session,
+// printing a per-step pass/fail report and stopping at the first broken
+// locator. Shared by android and ios audit entry points since MobileSession
+// is the same type once attached.
+fn audit_mobile(mut s mobile.MobileSession, acts []webdriver.RecordedAction) {
+	mut passed := 0
+	for idx, a in acts {
+		if a.kind == .goto || a.kind == .select_option || a.kind == .press {
+			eprintln('· step ${idx + 1}/${acts.len}: ${a.kind} — skipped (not supported on mobile)')
+			passed++
+			continue
+		}
+		n := (s.locator_for(a.target).find_all() or { []webdriver.ElementRef{} }).len
+		reason := webdriver.locator_health(n, a.target.nth)
+		if reason != '' {
+			report_broken(idx, acts.len, passed, '${a.kind} [${a.target.kind} ${a.target.value}]',
+				reason)
+			exit(1)
+		}
+		s.perform_action(a) or {
+			report_broken(idx, acts.len, passed, '${a.kind} [${a.target.kind} ${a.target.value}]',
+				'resolved but failed to perform: ${err}')
+			exit(1)
+		}
+		eprintln('✓ step ${idx + 1}/${acts.len}: ${a.kind}')
+		passed++
+	}
+	eprintln('${passed}/${acts.len} steps OK — flow still resolves cleanly.')
+}
+
+// report_broken prints the standard "step broke" report shared by all three
+// audit entry points: which step, what it was, why, and how far the replay
+// got before stopping.
+fn report_broken(idx int, total int, passed int, step string, reason string) {
+	eprintln('✗ step ${idx + 1}/${total}: ${step} — ${reason}')
+	eprintln('${passed}/${total} steps OK; stopped at step ${idx + 1}')
 }

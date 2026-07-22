@@ -1,5 +1,7 @@
 module mobile
 
+import vebidor.webdriver
+
 // Offline tests for the mobile capture core — no device required. Cover the
 // coordinate scaling, the getevent stream parser, the wm/getevent text
 // parsers, the XML node parser + hit-test, and the per-platform selector
@@ -243,4 +245,76 @@ fn test_parse_nodes_handles_gt_in_attr() {
 	nodes := parse_nodes(xml)
 	assert nodes.len == 1
 	assert (nodes[0].attrs['text'] or { '' }) == 'a > b'
+}
+
+// --- MobileSession.locator_for: matches the direct get_by_* calls ----------
+// (the spec->locator resolver used by audit mode to replay a persisted
+// recording, promoted from the recorder onto the session in this change.)
+
+fn test_locator_for_android_test_id() {
+	s := &MobileSession{
+		platform: .android
+	}
+	l := s.locator_for(webdriver.LocatorSpec{
+		kind:  .test_id
+		value: 'submit'
+	})
+	direct := s.get_by_test_id('submit')
+	assert l.using == direct.using
+	assert l.value == direct.value
+}
+
+fn test_locator_for_android_role() {
+	s := &MobileSession{
+		platform: .android
+	}
+	l := s.locator_for(webdriver.LocatorSpec{
+		kind:  .role
+		role:  'button'
+		value: 'OK'
+	})
+	direct := s.get_by_role(.button, 'OK')
+	assert l.using == direct.using
+	assert l.value == direct.value
+}
+
+fn test_locator_for_role_fallback_unmapped() {
+	// 'heading' has no clean MobileRole mapping, so locator_for should fall
+	// back to get_by_text — mirroring the emitter's role fallback.
+	s := &MobileSession{
+		platform: .android
+	}
+	l := s.locator_for(webdriver.LocatorSpec{
+		kind:  .role
+		role:  'heading'
+		value: 'Title'
+	})
+	direct := s.get_by_text('Title')
+	assert l.using == direct.using
+	assert l.value == direct.value
+}
+
+fn test_locator_for_ios_label() {
+	s := &MobileSession{
+		platform: .ios
+	}
+	l := s.locator_for(webdriver.LocatorSpec{
+		kind:  .label
+		value: 'Done'
+	})
+	direct := s.get_by_label('Done')
+	assert l.using == direct.using
+	assert l.value == direct.value
+}
+
+fn test_locator_for_xpath() {
+	s := &MobileSession{
+		platform: .android
+	}
+	l := s.locator_for(webdriver.LocatorSpec{
+		kind:  .xpath
+		value: '//button'
+	})
+	assert l.using == 'xpath'
+	assert l.value == '//button'
 }

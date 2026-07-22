@@ -189,6 +189,176 @@ fn test_emit_v_mobile_role_fallback() {
 	assert out.contains("s.get_by_text('Title').tap()!")
 }
 
+fn test_locator_for_matches_direct_calls() {
+	wd := &WebDriver{}
+
+	a := wd.locator_for(LocatorSpec{ kind: .test_id, value: 'toast' })
+	b := wd.get_by_test_id('toast')
+	assert a.using == b.using
+	assert a.value == b.value
+
+	c := wd.locator_for(LocatorSpec{ kind: .role, role: 'button', value: 'Save' })
+	d := wd.get_by_role('button', 'Save')
+	assert c.using == d.using
+	assert c.value == d.value
+
+	e := wd.locator_for(LocatorSpec{ kind: .label, value: 'Email' })
+	f := wd.get_by_label('Email')
+	assert e.using == f.using
+	assert e.value == f.value
+
+	g := wd.locator_for(LocatorSpec{ kind: .placeholder, value: 'Search' })
+	h := wd.get_by_placeholder('Search')
+	assert g.using == h.using
+	assert g.value == h.value
+
+	i := wd.locator_for(LocatorSpec{ kind: .text, value: 'Next' })
+	j := wd.get_by_text('Next')
+	assert i.using == j.using
+	assert i.value == j.value
+
+	k := wd.locator_for(LocatorSpec{ kind: .css, value: '.btn' })
+	assert k.using == 'css selector'
+	assert k.value == '.btn'
+
+	l := wd.locator_for(LocatorSpec{ kind: .xpath, value: '//a' })
+	assert l.using == 'xpath'
+	assert l.value == '//a'
+}
+
+fn test_locator_for_nth() {
+	wd := &WebDriver{}
+	l := wd.locator_for(LocatorSpec{ kind: .css, value: '.btn', nth: 2 })
+	assert l.index == 2
+}
+
+fn test_locator_health_unique_match() {
+	assert locator_health(1, -1) == ''
+}
+
+fn test_locator_health_not_found() {
+	assert locator_health(0, -1) == 'not found: 0 matches (need 1)'
+}
+
+fn test_locator_health_ambiguous() {
+	assert locator_health(3, -1) == 'ambiguous: 3 matches (was unique at record time)'
+}
+
+fn test_locator_health_nth_in_range() {
+	assert locator_health(3, 2) == ''
+}
+
+fn test_locator_health_nth_out_of_range() {
+	assert locator_health(2, 2) == 'not found: 2 matches (need 3)'
+}
+
+fn test_actions_json_round_trip() {
+	acts := [
+		RecordedAction{
+			kind:  .goto
+			value: 'https://example.com'
+		},
+		RecordedAction{
+			kind:   .click
+			target: LocatorSpec{
+				kind:  .role
+				role:  'button'
+				value: 'Save'
+			}
+		},
+		RecordedAction{
+			kind:   .fill
+			target: LocatorSpec{
+				kind:  .label
+				value: 'Email'
+			}
+			value:  'a@b.com'
+		},
+		RecordedAction{
+			kind:   .press
+			target: LocatorSpec{
+				kind:  .placeholder
+				value: 'Search'
+			}
+			value:  'Enter'
+		},
+		RecordedAction{
+			kind:   .check
+			target: LocatorSpec{
+				kind:  .role
+				role:  'checkbox'
+				value: 'Agree'
+			}
+		},
+		RecordedAction{
+			kind:   .select_option
+			target: LocatorSpec{
+				kind:  .label
+				value: 'Country'
+			}
+			value:  'Canada'
+		},
+		RecordedAction{
+			kind:   .assert_visible
+			target: LocatorSpec{
+				kind:  .test_id
+				value: 'toast'
+			}
+		},
+		RecordedAction{
+			kind:   .assert_text
+			target: LocatorSpec{
+				kind:  .text
+				value: 'Done'
+			}
+			value:  'Saved'
+		},
+		RecordedAction{
+			kind:   .assert_contain_text
+			target: LocatorSpec{
+				kind:  .css
+				value: '.msg'
+			}
+			value:  'partial'
+		},
+		RecordedAction{
+			kind:   .click
+			target: LocatorSpec{
+				kind:  .xpath
+				value: '//a'
+				nth:   2
+			}
+		},
+	]
+	json_str := actions_to_json(acts)
+	decoded := actions_from_json(json_str) or { panic(err) }
+	assert decoded.len == acts.len
+	for idx, a in acts {
+		d := decoded[idx]
+		assert d.kind == a.kind
+		assert d.value == a.value
+		assert d.target.kind == a.target.kind
+		assert d.target.value == a.target.value
+		assert d.target.role == a.target.role
+		assert d.target.nth == a.target.nth
+	}
+}
+
+fn test_actions_json_empty_role_and_default_nth() {
+	acts := [
+		RecordedAction{
+			kind:   .click
+			target: LocatorSpec{
+				kind:  .text
+				value: 'Go'
+			}
+		},
+	]
+	decoded := actions_from_json(actions_to_json(acts)) or { panic(err) }
+	assert decoded[0].target.role == ''
+	assert decoded[0].target.nth == -1
+}
+
 fn test_parse_recorded_click() {
 	obj := json.decode[json.Any]('{"action":"click","sel":{"kind":"role","value":"Save","role":"button","nth":-1},"value":""}') or {
 		panic(err)
