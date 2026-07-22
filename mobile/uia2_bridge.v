@@ -72,6 +72,17 @@ pub fn wait_for_uia2(base_url string, timeout_ms int) ! {
 	}
 }
 
+// exe_suffix is the platform's executable extension. Needed because
+// `os.exists` does no extension resolution of its own — on Windows,
+// `platform-tools/adb` never exists, only `platform-tools/adb.exe`.
+fn exe_suffix() string {
+	$if windows {
+		return '.exe'
+	} $else {
+		return ''
+	}
+}
+
 // detect_adb returns the adb command to use — falls back to
 // `$ANDROID_HOME/platform-tools/adb` or `$ANDROID_SDK_ROOT/platform-tools/adb`
 // if adb isn't on PATH. Errors with a useful message if neither is
@@ -85,7 +96,7 @@ fn detect_adb() !string {
 		if val == '' {
 			continue
 		}
-		candidate := os.join_path(val, 'platform-tools', 'adb')
+		candidate := os.join_path(val, 'platform-tools', 'adb' + exe_suffix())
 		if os.exists(candidate) {
 			return candidate
 		}
